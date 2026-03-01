@@ -165,7 +165,7 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="glass p-6 border-cyber-purple/20">
               <h3 className="font-exo font-bold text-white mb-4">Revenue (Last 30 Days)</h3>
-              <div className="h-72">
+              <div className="h-72" style={{ minWidth: '300px', minHeight: '280px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={charts?.revenue_by_day || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="glass p-6 border-cyber-purple/20">
               <h3 className="font-exo font-bold text-white mb-4">Orders (Last 30 Days)</h3>
-              <div className="h-72">
+              <div className="h-72" style={{ minWidth: '300px', minHeight: '280px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={charts?.revenue_by_day || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -206,7 +206,7 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <Card className="glass p-6 border-cyber-purple/20">
               <h3 className="font-exo font-bold text-white mb-4">New Users (Last 30 Days)</h3>
-              <div className="h-64">
+              <div className="h-64" style={{ minWidth: '200px', minHeight: '250px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={charts?.users_by_day || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -224,7 +224,7 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
             <Card className="glass p-6 border-cyber-purple/20">
               <h3 className="font-exo font-bold text-white mb-4">Orders by Status</h3>
-              <div className="h-64">
+              <div className="h-64" style={{ minWidth: '200px', minHeight: '250px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
             <Card className="glass p-6 border-cyber-purple/20">
               <h3 className="font-exo font-bold text-white mb-4">Revenue by Payment Method</h3>
-              <div className="h-64">
+              <div className="h-64" style={{ minWidth: '200px', minHeight: '250px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
