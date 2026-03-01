@@ -27,7 +27,9 @@ const AdminTickets = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
       const response = await axios.get(`${API}/admin/tickets${params}`, { headers, withCredentials: true });
-      setTickets(response.data || []);
+      // Handle both array and object response formats
+      const ticketsData = Array.isArray(response.data) ? response.data : (response.data.tickets || []);
+      setTickets(ticketsData);
     } catch (error) {
       toast.error('Failed to load tickets');
     } finally {
