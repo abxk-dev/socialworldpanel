@@ -96,32 +96,77 @@ const HomePage = () => {
 
       <Navbar />
 
-      {/* Stats Ticker */}
-      <div className="bg-deep-navy/80 border-b border-white/5 py-2 overflow-hidden">
-        <div className="ticker-wrapper">
-          <div className="ticker-content flex gap-16 items-center text-sm">
-            {[...Array(2)].map((_, i) => (
+      {/* Live Stats Ticker */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-deep-navy via-deep-navy/95 to-deep-navy border-b border-electric-blue/20">
+        {/* Glow effects */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-deep-navy to-transparent z-10"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-deep-navy to-transparent z-10"></div>
+        
+        <div className="py-3 animate-ticker whitespace-nowrap">
+          <div className="inline-flex items-center gap-4">
+            {[...Array(3)].map((_, i) => (
               <React.Fragment key={i}>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-neon-green rounded-full animate-pulse"></span>
-                  <span className="text-gray-400">Total Orders:</span>
-                  <span className="text-electric-blue font-bold">{stats.total_orders.toLocaleString()}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-electric-blue rounded-full animate-pulse"></span>
-                  <span className="text-gray-400">Active Users:</span>
-                  <span className="text-neon-green font-bold">{stats.total_users.toLocaleString()}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-cyber-purple rounded-full animate-pulse"></span>
-                  <span className="text-gray-400">Services:</span>
-                  <span className="text-cyber-purple font-bold">{stats.total_services}+</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                  <span className="text-gray-400">Orders Today:</span>
-                  <span className="text-yellow-400 font-bold">{stats.orders_today.toLocaleString()}</span>
-                </span>
+                {/* Live indicator */}
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-500/20 border border-red-500/40 rounded-full">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <span className="text-red-400 text-xs font-bold uppercase tracking-wider">LIVE</span>
+                </div>
+                
+                {/* Total Orders */}
+                <div className="inline-flex items-center gap-3 px-5 py-2 bg-electric-blue/10 border border-electric-blue/30 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-electric-blue/20 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-electric-blue" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Total Orders</div>
+                    <div className="text-lg font-exo font-black text-electric-blue">{stats.total_orders.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <span className="text-gray-600 mx-2">|</span>
+                
+                {/* Active Users */}
+                <div className="inline-flex items-center gap-3 px-5 py-2 bg-neon-green/10 border border-neon-green/30 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-neon-green/20 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-neon-green" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Active Users</div>
+                    <div className="text-lg font-exo font-black text-neon-green">{stats.total_users.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <span className="text-gray-600 mx-2">|</span>
+                
+                {/* Services */}
+                <div className="inline-flex items-center gap-3 px-5 py-2 bg-cyber-purple/10 border border-cyber-purple/30 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-cyber-purple/20 flex items-center justify-center">
+                    <Globe className="w-4 h-4 text-cyber-purple" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Services</div>
+                    <div className="text-lg font-exo font-black text-cyber-purple">{stats.total_services}+</div>
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <span className="text-gray-600 mx-2">|</span>
+                
+                {/* Orders Today */}
+                <div className="inline-flex items-center gap-3 px-5 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-yellow-400" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Orders Today</div>
+                    <div className="text-lg font-exo font-black text-yellow-400">{stats.orders_today.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* Separator before next loop */}
+                <span className="text-gray-600 mx-8">•••</span>
               </React.Fragment>
             ))}
           </div>
