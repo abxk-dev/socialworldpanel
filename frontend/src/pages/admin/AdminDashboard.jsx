@@ -285,7 +285,7 @@ const AdminDashboard = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
           <Card className="glass p-6 border-cyber-purple/20">
             <h3 className="font-exo font-bold text-white mb-4">Top 5 Best-Selling Services</h3>
-            <div className="h-64">
+            <div className="h-64" style={{ minWidth: '300px', minHeight: '250px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={charts?.top_services || []} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
