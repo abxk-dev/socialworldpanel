@@ -37,12 +37,22 @@ const DashboardLayout = ({ children, title }) => {
         {/* Logo */}
         <div className="p-6 border-b border-white/5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
-              <span className="text-white font-exo font-black text-xl">SW</span>
-            </div>
-            <span className="text-white font-exo font-bold">
-              Social<span className="text-electric-blue">Panel</span>
-            </span>
+            {settings.panel_logo ? (
+              <img 
+                src={`${BACKEND_URL}${settings.panel_logo}`} 
+                alt="Logo" 
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                  <span className="text-white font-exo font-black text-xl">SW</span>
+                </div>
+                <span className="text-white font-exo font-bold">
+                  {settings.panel_name || 'Social'}<span className="text-electric-blue">Panel</span>
+                </span>
+              </>
+            )}
           </Link>
         </div>
 
