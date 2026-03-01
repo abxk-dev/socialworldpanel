@@ -101,6 +101,22 @@ A comprehensive Social Media Marketing (SMM) Panel SaaS platform allowing users 
 - [x] Orders Report: Orders by status breakdown, top 10 services by volume, CSV export
 - [x] Payments Report: Table filterable by method/status/date, summary by method, total bonuses, CSV export
 
+#### 5. Logo & Favicon Upload (Settings)
+- [x] Branding section with Panel Name
+- [x] Logo upload with preview and delete
+- [x] Favicon upload with preview and delete
+- [x] Recommended size hints
+- [x] File saved to /app/backend/uploads/
+
+#### 6. Platform Management
+- [x] Platforms grid page with cards
+- [x] Add/Edit platform modal
+- [x] Platform name, slug, icon selector, color picker
+- [x] Display order and active toggle
+- [x] Live preview in modal
+- [x] Auto-creates service category for platform
+- [x] Delete platform (also removes category)
+
 ### Previously Implemented
 - [x] Public website: Homepage, Services, Pricing, API docs, Blog, About, Contact
 - [x] JWT authentication with email/password
