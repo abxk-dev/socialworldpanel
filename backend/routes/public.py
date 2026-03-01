@@ -22,6 +22,19 @@ async def get_public_stats():
         "orders_today": random.randint(500, 1500)
     }
 
+@router.get("/settings")
+async def get_public_settings():
+    """Get public panel settings (logo, favicon, name)"""
+    settings = await db.admin_settings.find_one({}, {"_id": 0})
+    if not settings:
+        return {"panel_name": "Social World Panel"}
+    return {
+        "panel_name": settings.get("panel_name", "Social World Panel"),
+        "panel_logo": settings.get("panel_logo"),
+        "favicon": settings.get("favicon"),
+        "maintenance_mode": settings.get("maintenance_mode", False)
+    }
+
 @router.get("/services")
 async def get_public_services():
     return await db.services.find({"is_active": True}, {"_id": 0}).limit(20).to_list(20)
