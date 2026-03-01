@@ -463,10 +463,10 @@ class TestUserOrderFlow:
         response = requests.get(f"{BASE_URL}/api/services", headers=headers)
         assert response.status_code == 200
         data = response.json()
-        assert "services" in data
-        assert len(data["services"]) > 0
-        print(f"✓ Services fetched: {len(data['services'])} available")
-        return data["services"]
+        # Services endpoint returns list directly
+        assert isinstance(data, list)
+        assert len(data) > 0
+        print(f"✓ Services fetched: {len(data)} available")
 
 
 if __name__ == "__main__":
