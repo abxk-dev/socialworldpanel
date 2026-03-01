@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, 
   MessageSquare, Settings, LogOut, Home, Menu, X,
-  Server, Gift, BarChart3
+  Server, Gift, BarChart3, Layers
 } from 'lucide-react';
 import { useAuth } from '../../App';
 import { Button } from '../ui/button';
