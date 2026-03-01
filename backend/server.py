@@ -1,3 +1,7 @@
+# Re-export from modular main.py
+from main import app
+
+# Legacy imports kept for backwards compatibility
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, Body, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
@@ -30,7 +34,7 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'social-world-panel-secret-key-2024')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24 * 7
 
-app = FastAPI(title="Social World Panel API", version="2.0.0")
+# Note: app is imported from main.py now
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
