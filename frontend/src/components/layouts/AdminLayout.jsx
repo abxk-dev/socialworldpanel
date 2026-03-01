@@ -38,12 +38,22 @@ const AdminLayout = ({ children, title }) => {
       <aside className="hidden lg:flex flex-col w-64 bg-deep-navy border-r border-cyber-purple/20">
         <div className="p-6 border-b border-cyber-purple/20">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-purple to-electric-blue flex items-center justify-center">
-              <span className="text-white font-exo font-black text-xl">A</span>
-            </div>
-            <span className="text-white font-exo font-bold">
-              Admin <span className="text-cyber-purple">Panel</span>
-            </span>
+            {settings.panel_logo ? (
+              <img 
+                src={`${BACKEND_URL}${settings.panel_logo}`} 
+                alt="Logo" 
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-purple to-electric-blue flex items-center justify-center">
+                  <span className="text-white font-exo font-black text-xl">A</span>
+                </div>
+                <span className="text-white font-exo font-bold">
+                  Admin <span className="text-cyber-purple">Panel</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
 
