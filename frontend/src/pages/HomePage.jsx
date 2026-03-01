@@ -96,79 +96,86 @@ const HomePage = () => {
 
       <Navbar />
 
-      {/* Live Stats Ticker */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-deep-navy via-deep-navy/95 to-deep-navy border-b border-electric-blue/20">
-        {/* Glow effects */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-deep-navy to-transparent z-10"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-deep-navy to-transparent z-10"></div>
+      {/* Live Stats Bar - Mobile Friendly */}
+      <div className="relative bg-gradient-to-r from-electric-blue/5 via-cyber-purple/5 to-neon-green/5 border-b border-white/10">
+        {/* Animated gradient line on top */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-electric-blue via-cyber-purple to-neon-green opacity-60"></div>
         
-        <div className="py-3 animate-ticker whitespace-nowrap">
-          <div className="inline-flex items-center gap-4">
-            {[...Array(3)].map((_, i) => (
-              <React.Fragment key={i}>
-                {/* Live indicator */}
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-500/20 border border-red-500/40 rounded-full">
-                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  <span className="text-red-400 text-xs font-bold uppercase tracking-wider">LIVE</span>
-                </div>
-                
-                {/* Total Orders */}
-                <div className="inline-flex items-center gap-3 px-5 py-2 bg-electric-blue/10 border border-electric-blue/30 rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-electric-blue/20 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-electric-blue" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Total Orders</div>
-                    <div className="text-lg font-exo font-black text-electric-blue">{stats.total_orders.toLocaleString()}</div>
-                  </div>
-                </div>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between py-3 gap-2 overflow-x-auto scrollbar-hide">
+            {/* Live Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 rounded-md border border-red-500/30 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span className="text-red-400 text-xs font-bold">LIVE</span>
+            </div>
 
-                {/* Separator */}
-                <span className="text-gray-600 mx-2">|</span>
-                
-                {/* Active Users */}
-                <div className="inline-flex items-center gap-3 px-5 py-2 bg-neon-green/10 border border-neon-green/30 rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-neon-green/20 flex items-center justify-center">
-                    <Users className="w-4 h-4 text-neon-green" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Active Users</div>
-                    <div className="text-lg font-exo font-black text-neon-green">{stats.total_users.toLocaleString()}</div>
-                  </div>
+            {/* Stats Container */}
+            <div className="flex items-center gap-3 sm:gap-6 md:gap-8">
+              {/* Total Orders */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden sm:flex w-7 h-7 rounded-md bg-electric-blue/20 items-center justify-center">
+                  <Zap className="w-3.5 h-3.5 text-electric-blue" />
                 </div>
-
-                {/* Separator */}
-                <span className="text-gray-600 mx-2">|</span>
-                
-                {/* Services */}
-                <div className="inline-flex items-center gap-3 px-5 py-2 bg-cyber-purple/10 border border-cyber-purple/30 rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-cyber-purple/20 flex items-center justify-center">
-                    <Globe className="w-4 h-4 text-cyber-purple" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Services</div>
-                    <div className="text-lg font-exo font-black text-cyber-purple">{stats.total_services}+</div>
-                  </div>
+                <div className="text-center sm:text-left">
+                  <span className="text-electric-blue font-exo font-black text-sm sm:text-base">{stats.total_orders.toLocaleString()}</span>
+                  <span className="hidden sm:inline text-gray-500 text-xs ml-1">orders</span>
+                  <p className="sm:hidden text-[9px] text-gray-500 leading-none">ORDERS</p>
                 </div>
+              </div>
 
-                {/* Separator */}
-                <span className="text-gray-600 mx-2">|</span>
-                
-                {/* Orders Today */}
-                <div className="inline-flex items-center gap-3 px-5 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Orders Today</div>
-                    <div className="text-lg font-exo font-black text-yellow-400">{stats.orders_today.toLocaleString()}</div>
-                  </div>
+              <span className="text-gray-700">•</span>
+
+              {/* Active Users */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden sm:flex w-7 h-7 rounded-md bg-neon-green/20 items-center justify-center">
+                  <Users className="w-3.5 h-3.5 text-neon-green" />
                 </div>
+                <div className="text-center sm:text-left">
+                  <span className="text-neon-green font-exo font-black text-sm sm:text-base">{stats.total_users.toLocaleString()}</span>
+                  <span className="hidden sm:inline text-gray-500 text-xs ml-1">users</span>
+                  <p className="sm:hidden text-[9px] text-gray-500 leading-none">USERS</p>
+                </div>
+              </div>
 
-                {/* Separator before next loop */}
-                <span className="text-gray-600 mx-8">•••</span>
-              </React.Fragment>
-            ))}
+              <span className="text-gray-700">•</span>
+
+              {/* Services */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden sm:flex w-7 h-7 rounded-md bg-cyber-purple/20 items-center justify-center">
+                  <Globe className="w-3.5 h-3.5 text-cyber-purple" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <span className="text-cyber-purple font-exo font-black text-sm sm:text-base">{stats.total_services}+</span>
+                  <span className="hidden sm:inline text-gray-500 text-xs ml-1">services</span>
+                  <p className="sm:hidden text-[9px] text-gray-500 leading-none">SERVICES</p>
+                </div>
+              </div>
+
+              <span className="text-gray-700 hidden sm:inline">•</span>
+
+              {/* Orders Today */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
+                <div className="w-7 h-7 rounded-md bg-yellow-400/20 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 text-yellow-400" />
+                </div>
+                <div>
+                  <span className="text-yellow-400 font-exo font-black text-base">{stats.orders_today.toLocaleString()}</span>
+                  <span className="text-gray-500 text-xs ml-1">today</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Online Users Indicator */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-neon-green/10 rounded-md border border-neon-green/30 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
+              </span>
+              <span className="text-neon-green text-xs font-medium">{Math.floor(Math.random() * 500 + 200)} online</span>
+            </div>
           </div>
         </div>
       </div>
