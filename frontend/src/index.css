@@ -174,7 +174,7 @@
 .platform-telegram { @apply text-sky-500; }
 .platform-linkedin { @apply text-blue-600; }
 
-/* Ticker Animation */
+/* Ticker Animation - Horizontal Scrolling */
 .ticker-wrapper {
   overflow: hidden;
   white-space: nowrap;
@@ -186,6 +186,23 @@
 }
 
 .ticker-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.33%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker-scroll 25s linear infinite;
+}
+
+.animate-ticker:hover {
   animation-play-state: paused;
 }
 
