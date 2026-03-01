@@ -282,11 +282,13 @@ function AppRouter() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <div className="App min-h-screen bg-dark-bg">
-          <AppRouter />
-        </div>
-      </AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <div className="App min-h-screen bg-dark-bg">
+            <AppRouter />
+          </div>
+        </AuthProvider>
+      </SettingsProvider>
     </BrowserRouter>
   );
 }
