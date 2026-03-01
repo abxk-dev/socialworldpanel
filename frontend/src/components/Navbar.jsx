@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { Button } from './ui/button';
-import { useAuth } from '../App';
+import { useAuth, useSettings } from '../App';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const location = useLocation();
 
   const navLinks = [
