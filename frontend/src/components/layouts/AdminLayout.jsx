@@ -5,13 +5,16 @@ import {
   MessageSquare, Settings, LogOut, Home, Menu, X,
   Server, Gift, BarChart3, Layers
 } from 'lucide-react';
-import { useAuth } from '../../App';
+import { useAuth, useSettings } from '../../App';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AdminLayout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const location = useLocation();
 
   const navItems = [
