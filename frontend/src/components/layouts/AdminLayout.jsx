@@ -20,6 +20,7 @@ const AdminLayout = ({ children, title }) => {
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Users', path: '/admin/users', icon: Users },
     { name: 'Providers', path: '/admin/providers', icon: Server },
+    { name: 'Platforms', path: '/admin/platforms', icon: Layers },
     { name: 'Bonuses', path: '/admin/bonuses', icon: Gift },
     { name: 'Reports', path: '/admin/reports', icon: BarChart3 },
     { name: 'Tickets', path: '/admin/tickets', icon: MessageSquare },
