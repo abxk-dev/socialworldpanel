@@ -44,6 +44,65 @@ import AuthCallback from './components/AuthCallback';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 
+// Panel Settings Context
+const SettingsContext = createContext(null);
+
+export const useSettings = () => {
+  const context = useContext(SettingsContext);
+  return context || { settings: {}, loading: true };
+};
+
+export const SettingsProvider = ({ children }) => {
+  const [settings, setSettings] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await axios.get(`${API}/public/settings`);
+        setSettings(response.data);
+        
+        // Set favicon if available
+        if (response.data.favicon) {
+          const faviconUrl = `${BACKEND_URL}${response.data.favicon}`;
+          let link = document.querySelector("link[rel~='icon']");
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+          }
+          link.href = faviconUrl;
+        }
+        
+        // Set page title
+        if (response.data.panel_name) {
+          document.title = response.data.panel_name;
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const refreshSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/public/settings`);
+      setSettings(response.data);
+    } catch (error) {
+      console.error('Failed to refresh settings:', error);
+    }
+  };
+
+  return (
+    <SettingsContext.Provider value={{ settings, loading, refreshSettings }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+};
+
 // Auth Context
 const AuthContext = createContext(null);
 
