@@ -5,13 +5,16 @@ import {
   Wallet, MessageSquare, Code, User, LogOut, Settings,
   Menu, X, ChevronRight
 } from 'lucide-react';
-import { useAuth } from '../../App';
+import { useAuth, useSettings } from '../../App';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const DashboardLayout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const location = useLocation();
 
   const navItems = [
