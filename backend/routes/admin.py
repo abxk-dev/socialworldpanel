@@ -444,3 +444,127 @@ async def admin_update_settings(request: Request, data: dict = Body(...)):
     await get_admin_user(request, db)
     await db.admin_settings.update_one({}, {"$set": data}, upsert=True)
     return {"message": "Settings updated"}
+
+# ==================== FILE UPLOADS ====================
+
+UPLOAD_DIR = "/app/backend/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/upload/logo")
+async def upload_logo(request: Request, file: UploadFile = File(...)):
+    await get_admin_user(request, db)
+    
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    ext = file.filename.split(".")[-1] if "." in file.filename else "png"
+    filename = f"logo_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    logo_url = f"/api/admin/uploads/{filename}"
+    await db.admin_settings.update_one({}, {"$set": {"panel_logo": logo_url}}, upsert=True)
+    
+    return {"url": logo_url, "message": "Logo uploaded successfully"}
+
+@router.post("/upload/favicon")
+async def upload_favicon(request: Request, file: UploadFile = File(...)):
+    await get_admin_user(request, db)
+    
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    ext = file.filename.split(".")[-1] if "." in file.filename else "ico"
+    filename = f"favicon_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    favicon_url = f"/api/admin/uploads/{filename}"
+    await db.admin_settings.update_one({}, {"$set": {"favicon": favicon_url}}, upsert=True)
+    
+    return {"url": favicon_url, "message": "Favicon uploaded successfully"}
+
+@router.get("/uploads/{filename}")
+async def get_uploaded_file(filename: str):
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(filepath)
+
+# ==================== PLATFORMS ====================
+
+@router.get("/platforms")
+async def get_platforms(request: Request):
+    await get_admin_user(request, db)
+    platforms = await db.platforms.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return platforms
+
+@router.post("/platforms")
+async def create_platform(request: Request, data: dict = Body(...)):
+    await get_admin_user(request, db)
+    
+    platform = {
+        "platform_id": f"plat_{uuid.uuid4().hex[:8]}",
+        "name": data.get("name"),
+        "slug": data.get("slug", data.get("name", "").lower().replace(" ", "_")),
+        "icon": data.get("icon", "globe"),
+        "color": data.get("color", "#8B5CF6"),
+        "order": data.get("order", 99),
+        "is_active": data.get("is_active", True),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.platforms.insert_one(platform)
+    
+    # Also create a category for this platform
+    category = {
+        "category_id": f"cat_{platform['slug']}",
+        "name": platform["name"],
+        "platform": platform["slug"],
+        "icon": platform["icon"],
+        "order": platform["order"],
+        "is_active": True
+    }
+    await db.service_categories.update_one(
+        {"category_id": category["category_id"]},
+        {"$set": category},
+        upsert=True
+    )
+    
+    return {"platform_id": platform["platform_id"], "message": "Platform created"}
+
+@router.put("/platforms/{platform_id}")
+async def update_platform(request: Request, platform_id: str, data: dict = Body(...)):
+    await get_admin_user(request, db)
+    
+    result = await db.platforms.update_one({"platform_id": platform_id}, {"$set": data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Platform not found")
+    
+    # Update corresponding category if name changed
+    platform = await db.platforms.find_one({"platform_id": platform_id}, {"_id": 0})
+    if platform:
+        await db.service_categories.update_one(
+            {"platform": platform["slug"]},
+            {"$set": {"name": platform["name"], "icon": platform.get("icon"), "order": platform.get("order", 99)}}
+        )
+    
+    return {"message": "Platform updated"}
+
+@router.delete("/platforms/{platform_id}")
+async def delete_platform(request: Request, platform_id: str):
+    await get_admin_user(request, db)
+    
+    platform = await db.platforms.find_one({"platform_id": platform_id}, {"_id": 0})
+    if platform:
+        await db.service_categories.delete_one({"platform": platform["slug"]})
+    
+    await db.platforms.delete_one({"platform_id": platform_id})
+    return {"message": "Platform deleted"}
+
