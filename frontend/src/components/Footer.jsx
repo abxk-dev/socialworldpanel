@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Youtube, Twitter, Send, Mail, MapPin, Phone } from 'lucide-react';
+import { useSettings } from '../App';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Footer = () => {
+  const { settings } = useSettings();
   return (
     <footer className="bg-deep-navy border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -10,12 +14,22 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
-                <span className="text-white font-exo font-black text-xl">SW</span>
-              </div>
-              <span className="text-white font-exo font-bold text-lg">
-                Social World<span className="text-electric-blue">Panel</span>
-              </span>
+              {settings?.panel_logo ? (
+                <img
+                  src={`${BACKEND_URL}${settings.panel_logo}`}
+                  alt={settings.panel_name || 'Logo'}
+                  className="h-[50px] w-auto object-contain"
+                />
+              ) : (
+                <>
+                  <div className="w-[50px] h-[50px] rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                    <span className="text-white font-exo font-black text-xl">SW</span>
+                  </div>
+                  <span className="text-white font-exo font-bold text-lg">
+                    Social World<span className="text-electric-blue">Panel</span>
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-gray-400 text-sm mb-4">
               The #1 SMM Panel for instant social media growth. Get real followers, likes, views & more at the cheapest prices.

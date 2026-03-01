@@ -5,9 +5,11 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
-import { useAuth } from '../App';
+import { useAuth, useSettings } from '../App';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -16,6 +18,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register, loginWithGoogle } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -44,9 +47,17 @@ const RegisterPage = () => {
           className="w-full max-w-md"
         >
           <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
-              <span className="text-white font-exo font-black text-xl">SW</span>
-            </div>
+            {settings?.favicon ? (
+              <img
+                src={`${BACKEND_URL}${settings.favicon}`}
+                alt={settings.panel_name || 'Favicon'}
+                className="h-10 w-10 object-contain"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                <span className="text-white font-exo font-black text-xl">SW</span>
+              </div>
+            )}
             <span className="text-white font-exo font-bold text-lg">
               Social World<span className="text-electric-blue">Panel</span>
             </span>
@@ -177,11 +188,21 @@ const RegisterPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-electric-blue/20 to-cyber-purple/20 flex items-center justify-center">
-              <div className="w-48 h-48 rounded-full bg-gradient-to-br from-electric-blue/30 to-cyber-purple/30 flex items-center justify-center animate-pulse">
-                <div className="text-6xl font-exo font-black neon-text">SW</div>
+            {settings?.favicon ? (
+              <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-electric-blue/20 to-cyber-purple/20 flex items-center justify-center">
+                <img
+                  src={`${BACKEND_URL}${settings.favicon}`}
+                  alt="Favicon"
+                  className="w-40 h-40 object-contain"
+                />
               </div>
-            </div>
+            ) : (
+              <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-electric-blue/20 to-cyber-purple/20 flex items-center justify-center">
+                <div className="w-48 h-48 rounded-full bg-gradient-to-br from-electric-blue/30 to-cyber-purple/30 flex items-center justify-center animate-pulse">
+                  <div className="text-6xl font-exo font-black neon-text">SW</div>
+                </div>
+              </div>
+            )}
             <h2 className="text-2xl font-exo font-bold text-white mb-4">Join 45,000+ Users</h2>
             <p className="text-gray-400">Growing their social media presence with us</p>
           </motion.div>

@@ -5,9 +5,11 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
-import { useAuth } from '../App';
+import { useAuth, useSettings } from '../App';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +17,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -35,7 +38,6 @@ const LoginPage = () => {
     <div className="min-h-screen bg-dark-bg flex">
       <Toaster position="top-right" theme="dark" />
       
-      {/* Left Panel - Decoration */}
       <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-cyber-purple/10 to-electric-blue/10 p-12">
         <div className="text-center">
           <motion.div
@@ -43,11 +45,21 @@ const LoginPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-cyber-purple/20 to-electric-blue/20 flex items-center justify-center">
-              <div className="w-48 h-48 rounded-full bg-gradient-to-br from-cyber-purple/30 to-electric-blue/30 flex items-center justify-center animate-pulse">
-                <div className="text-6xl font-exo font-black neon-text">SW</div>
+            {settings?.favicon ? (
+              <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-cyber-purple/20 to-electric-blue/20 flex items-center justify-center">
+                <img
+                  src={`${BACKEND_URL}${settings.favicon}`}
+                  alt="Favicon"
+                  className="w-40 h-40 object-contain"
+                />
               </div>
-            </div>
+            ) : (
+              <div className="w-64 h-64 mx-auto mb-8 rounded-full bg-gradient-to-br from-cyber-purple/20 to-electric-blue/20 flex items-center justify-center">
+                <div className="w-48 h-48 rounded-full bg-gradient-to-br from-cyber-purple/30 to-electric-blue/30 flex items-center justify-center animate-pulse">
+                  <div className="text-6xl font-exo font-black neon-text">SW</div>
+                </div>
+              </div>
+            )}
             <h2 className="text-2xl font-exo font-bold text-white mb-4">Welcome Back!</h2>
             <p className="text-gray-400">Continue growing your social media empire</p>
           </motion.div>
@@ -62,9 +74,17 @@ const LoginPage = () => {
           className="w-full max-w-md"
         >
           <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
-              <span className="text-white font-exo font-black text-xl">SW</span>
-            </div>
+            {settings?.favicon ? (
+              <img
+                src={`${BACKEND_URL}${settings.favicon}`}
+                alt={settings.panel_name || 'Favicon'}
+                className="h-10 w-10 object-contain"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                <span className="text-white font-exo font-black text-xl">SW</span>
+              </div>
+            )}
             <span className="text-white font-exo font-bold text-lg">
               Social World<span className="text-electric-blue">Panel</span>
             </span>

@@ -40,14 +40,14 @@ const Navbar = () => {
               <img 
                 src={`${BACKEND_URL}${settings.panel_logo}`} 
                 alt={settings.panel_name || 'Logo'} 
-                className="h-10 w-auto object-contain"
+                className="h-[50px] w-auto object-contain"
               />
             ) : (
               <>
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                <div className="w-[50px] h-[50px] rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
                   <span className="text-white font-exo font-black text-xl">SW</span>
                 </div>
-                <span className="hidden sm:block text-white font-exo font-bold text-lg">
+                <span className="hidden sm:block text-white font-exo font-bold text-2xl">
                   {settings.panel_name || 'Social World'}<span className="text-electric-blue">Panel</span>
                 </span>
               </>
