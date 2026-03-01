@@ -491,7 +491,7 @@ async def get_service(service_id: str):
 
 # ==================== ORDER ROUTES ====================
 
-@api_router.post("/orders")
+@api_router.post("/orders", status_code=201)
 async def create_order(request: Request, order_data: OrderCreate):
     user = await get_current_user(request)
     
