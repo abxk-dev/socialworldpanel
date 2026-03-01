@@ -36,12 +36,22 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
-              <span className="text-white font-exo font-black text-xl">SW</span>
-            </div>
-            <span className="hidden sm:block text-white font-exo font-bold text-lg">
-              Social World<span className="text-electric-blue">Panel</span>
-            </span>
+            {settings.panel_logo ? (
+              <img 
+                src={`${BACKEND_URL}${settings.panel_logo}`} 
+                alt={settings.panel_name || 'Logo'} 
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-blue to-cyber-purple flex items-center justify-center">
+                  <span className="text-white font-exo font-black text-xl">SW</span>
+                </div>
+                <span className="hidden sm:block text-white font-exo font-bold text-lg">
+                  {settings.panel_name || 'Social World'}<span className="text-electric-blue">Panel</span>
+                </span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation */}
