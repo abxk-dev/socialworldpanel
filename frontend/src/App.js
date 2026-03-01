@@ -210,6 +210,7 @@ function AppRouter() {
       <Route path="/admin/providers" element={<ProtectedRoute adminOnly><AdminProviders /></ProtectedRoute>} />
       <Route path="/admin/bonuses" element={<ProtectedRoute adminOnly><AdminBonuses /></ProtectedRoute>} />
       <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
+      <Route path="/admin/platforms" element={<ProtectedRoute adminOnly><AdminPlatforms /></ProtectedRoute>} />
       <Route path="/admin/tickets" element={<ProtectedRoute adminOnly><AdminTickets /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute adminOnly><AdminSettings /></ProtectedRoute>} />
 
