@@ -1,8 +1,12 @@
-from fastapi import APIRouter, HTTPException, Request, Body, Query
+from fastapi import APIRouter, HTTPException, Request, Body, Query, UploadFile, File
+from fastapi.responses import FileResponse
 from datetime import datetime, timezone, timedelta
 import random
 import csv
 import io
+import os
+import uuid
+import base64
 
 from middleware.auth import get_admin_user
 from models.schemas import BonusTier, BonusPromotion, BonusSettings, TicketMessage, Service, ServiceCategory
