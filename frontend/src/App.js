@@ -33,6 +33,9 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminTickets from './pages/admin/AdminTickets';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminProviders from './pages/admin/AdminProviders';
+import AdminBonuses from './pages/admin/AdminBonuses';
+import AdminReports from './pages/admin/AdminReports';
 
 // Components
 import AuthCallback from './components/AuthCallback';
