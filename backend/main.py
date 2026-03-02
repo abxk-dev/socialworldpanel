@@ -28,7 +28,10 @@ app = FastAPI(title="Social World Panel API", version="2.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://socialworldpanel.vercel.app",
+        "https://socialworldpanel-git-main-abhishek-kalias-projects-e47b3e05.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
