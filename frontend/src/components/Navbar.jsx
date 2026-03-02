@@ -19,6 +19,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const { settings } = useSettings();
   const location = useLocation();
+  const [logoError, setLogoError] = React.useState(false);
 
   const navLinks = [
     { name: 'Services', path: '/services' },
@@ -36,11 +37,12 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
-            {settings.panel_logo ? (
+            {settings.panel_logo && !logoError ? (
               <img 
                 src={`${BACKEND_URL}${settings.panel_logo}`} 
                 alt={settings.panel_name || 'Logo'} 
                 className="h-[50px] w-auto object-contain"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <>

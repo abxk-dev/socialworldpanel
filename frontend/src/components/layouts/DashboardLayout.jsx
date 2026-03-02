@@ -16,6 +16,7 @@ const DashboardLayout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const { settings } = useSettings();
   const location = useLocation();
+  const [logoError, setLogoError] = React.useState(false);
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -37,11 +38,12 @@ const DashboardLayout = ({ children, title }) => {
         {/* Logo */}
         <div className="p-6 border-b border-white/5">
           <Link to="/" className="flex items-center gap-2">
-            {settings.panel_logo ? (
+            {settings.panel_logo && !logoError ? (
               <img 
                 src={`${BACKEND_URL}${settings.panel_logo}`} 
                 alt="Logo" 
                 className="h-[50px] w-auto object-contain"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <>

@@ -7,6 +7,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Footer = () => {
   const { settings } = useSettings();
+  const [logoError, setLogoError] = React.useState(false);
   return (
     <footer className="bg-deep-navy border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -14,11 +15,12 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              {settings?.panel_logo ? (
+              {settings?.panel_logo && !logoError ? (
                 <img
                   src={`${BACKEND_URL}${settings.panel_logo}`}
                   alt={settings.panel_name || 'Logo'}
                   className="h-[50px] w-auto object-contain"
+                  onError={() => setLogoError(true)}
                 />
               ) : (
                 <>

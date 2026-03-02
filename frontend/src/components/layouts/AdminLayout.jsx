@@ -16,6 +16,7 @@ const AdminLayout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const { settings } = useSettings();
   const location = useLocation();
+  const [logoError, setLogoError] = React.useState(false);
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -38,11 +39,12 @@ const AdminLayout = ({ children, title }) => {
       <aside className="hidden lg:flex flex-col w-64 bg-deep-navy border-r border-cyber-purple/20">
         <div className="p-6 border-b border-cyber-purple/20">
           <div className="flex items-center gap-2">
-            {settings.panel_logo ? (
+            {settings.panel_logo && !logoError ? (
               <img 
                 src={`${BACKEND_URL}${settings.panel_logo}`} 
                 alt="Logo" 
                 className="h-[50px] w-auto object-contain"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <>
