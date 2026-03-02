@@ -133,7 +133,7 @@ response = requests.post(API_URL, json={
     "key": API_KEY,
     "action": "balance"
 })
-print(f"Balance: ${response.json()['balance']}")
+print(f"Balance: \\${response.json()['balance']}")
 
 # Get Services
 response = requests.post(API_URL, json={
@@ -142,7 +142,7 @@ response = requests.post(API_URL, json={
 })
 services = response.json()
 for service in services[:5]:
-    print(f"{service['service']}: {service['name']} - ${service['rate']}/1k")
+    print(f"{service['service']}: {service['name']} - \\${service['rate']}/1k")
 
 # Place Order
 response = requests.post(API_URL, json={
