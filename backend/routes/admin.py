@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Body, Query, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from datetime import datetime, timezone, timedelta
 import random
 import csv
@@ -7,6 +7,8 @@ import io
 import os
 import uuid
 import base64
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
 from middleware.auth import get_admin_user
 from models.schemas import BonusTier, BonusPromotion, BonusSettings, TicketMessage, Service, ServiceCategory
@@ -447,7 +449,11 @@ async def admin_update_settings(request: Request, data: dict = Body(...)):
 
 # ==================== FILE UPLOADS ====================
 
-UPLOAD_DIR = "uploads"
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "..", "uploads")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload/logo")
@@ -457,18 +463,20 @@ async def upload_logo(request: Request, file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
-    ext = file.filename.split(".")[-1] if "." in file.filename else "png"
-    filename = f"logo_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
     
-    content = await file.read()
-    with open(filepath, "wb") as f:
-        f.write(content)
-    
+    try:
+        bucket = AsyncIOMotorGridFSBucket(db)
+        grid_id = await bucket.upload_from_stream(f"logo_{uuid.uuid4().hex[:8]}.{ext}", content, metadata={"contentType": file.content_type})
+        logo_url = f"/api/admin/uploads/{str(grid_id)}"
+    except Exception:
+        filename = f"logo_{uuid.uuid4().hex[:8]}.{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        logo_url = f"/api/admin/uploads/{filename}"
     logo_url = f"/api/admin/uploads/{filename}"
     await db.admin_settings.update_one({}, {"$set": {"panel_logo": logo_url}}, upsert=True)
     
-    return {"url": logo_url, "message": "Logo uploaded successfully"}
 
 @router.post("/upload/favicon")
 async def upload_favicon(request: Request, file: UploadFile = File(...)):
@@ -492,10 +500,23 @@ async def upload_favicon(request: Request, file: UploadFile = File(...)):
 
 @router.get("/uploads/{filename}")
 async def get_uploaded_file(filename: str):
+    try:
+        bucket = AsyncIOMotorGridFSBucket(db)
+        try:
+            file_id = ObjectId(filename)
+        except Exception:
+            file_id = None
+        if file_id:
+            stream = await bucket.open_download_stream(file_id)
+            data = await stream.read()
+            content_type = getattr(stream, "_file", {}).get("metadata", {}).get("contentType") or "application/octet-stream"
+            return Response(content=data, media_type=content_type)
+    except Exception:
+        pass
     filepath = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(filepath)
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    raise HTTPException(status_code=404, detail="File not found")
 
 # ==================== PLATFORMS ====================
 
@@ -567,4 +588,3 @@ async def delete_platform(request: Request, platform_id: str):
     
     await db.platforms.delete_one({"platform_id": platform_id})
     return {"message": "Platform deleted"}
-
