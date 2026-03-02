@@ -447,7 +447,7 @@ async def admin_update_settings(request: Request, data: dict = Body(...)):
 
 # ==================== FILE UPLOADS ====================
 
-UPLOAD_DIR = "/app/backend/uploads"
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload/logo")
