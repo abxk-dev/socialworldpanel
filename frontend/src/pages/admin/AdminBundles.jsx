@@ -36,6 +36,7 @@ const AdminBundles = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [bundles, setBundles] = useState([]);
+  const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(EMPTY_BUNDLE);
@@ -43,9 +44,10 @@ const AdminBundles = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [bundlesRes, catsRes] = await Promise.all([
+      const [bundlesRes, catsRes, servicesRes] = await Promise.all([
         api.get('/admin/bundles', { withCredentials: true }),
         api.get('/admin/category-management/flat', { withCredentials: true }),
+        api.get('/admin/services', { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       const b = bundlesRes.data?.bundles || [];
       const rawCats =
@@ -64,8 +66,12 @@ const AdminBundles = () => {
           _id: normalizeId(cat?._id ?? cat?.id ?? cat?.category_id ?? cat?.categoryId),
         }))
         .filter((cat) => cat?._id);
+      const s = Array.isArray(servicesRes.data)
+        ? servicesRes.data
+        : (servicesRes.data?.services ?? []);
       setBundles(b);
       setCategories(c);
+      setServices(s);
     } catch (e) {
       toast.error('Failed to load bundles');
       setBundles([]);
@@ -194,6 +200,13 @@ const AdminBundles = () => {
     if (!id) return '—';
     const c = categories.find((x) => String(x._id) === String(id) || x.category_id === id);
     return c?.name || '—';
+  };
+
+  const serviceLabel = (svc) => {
+    const id = svc?.service_id != null ? String(svc.service_id) : '';
+    const name = String(svc?.name ?? svc?.service_name ?? '').trim();
+    if (id && name) return `${id} - ${name}`;
+    return id || name || 'Service';
   };
 
   return (
@@ -415,7 +428,7 @@ const AdminBundles = () => {
                           <SelectContent className="bg-[#050510] border-white/10 max-h-64">
                             {services.map((svc) => (
                               <SelectItem key={svc.service_id} value={String(svc.service_id)}>
-                                {serviceLabel(svc.service_id)}
+                                {serviceLabel(svc)}
                               </SelectItem>
                             ))}
                           </SelectContent>
