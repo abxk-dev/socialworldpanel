@@ -1,7 +1,15 @@
 import axios from "axios";
 
-const BASE = process.env.REACT_APP_BACKEND_URL || (typeof window !== "undefined" ? window.location.origin : "");
-const baseURL = BASE ? (BASE.endsWith("/api") ? BASE : BASE + "/api") : (typeof window !== "undefined" ? window.location.origin + "/api" : "/api");
+const isBrowser = typeof window !== "undefined";
+const hostname = isBrowser ? window.location.hostname : "";
+const isLocal =
+  hostname === "localhost" ||
+  hostname === "127.0.0.1" ||
+  hostname.endsWith(".local");
+
+const baseURL = isBrowser
+  ? (isLocal ? "http://localhost:4000/api" : window.location.origin + "/api")
+  : "/api";
 
 const api = axios.create({ baseURL });
 

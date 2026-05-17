@@ -103,3 +103,4 @@ frontend/node_modules/.cache/default-development/8.pack
 # Lockfiles policy
 # Keep only npm's package-lock.json, ignore yarn.lock
 yarn.lock
+.env*.local
