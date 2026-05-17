@@ -26,12 +26,23 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI(title="Social World Panel API", version="2.0.0")
 
 # CORS middleware
+frontend_url = os.environ.get("FRONTEND_URL")
+allowed_origins = [
+    "https://socialworldpanel.vercel.app",
+    "https://socialworldpanel-git-main-abhishek-kalias-projects-e47b3e05.vercel.app",
+    # Local dev (frontend + backend on different ports)
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://socialworldpanel.vercel.app",
-        "https://socialworldpanel-git-main-abhishek-kalias-projects-e47b3e05.vercel.app",
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"(https://.*\.vercel\.app$|http://localhost:\d+$|http://127\.0\.0\.1:\d+$)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

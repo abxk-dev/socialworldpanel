@@ -58,7 +58,7 @@ chainlit.md
 .ipynb_checkpoints/
 .ac
 
-# Deployment
+# Deployment (keep vercel.json in repo so Vercel uses it)
 .vercel
 
 # Data and databases
@@ -95,3 +95,11 @@ frontend/node_modules/.cache/default-development/1.pack_
 frontend/node_modules/.cache/default-development/1.pack
 frontend/node_modules/.cache/default-development/3.pack_
 frontend/node_modules/.cache/default-development/8.pack
+ 
+# Environment files
+.env
+.env.*
+
+# Lockfiles policy
+# Keep only npm's package-lock.json, ignore yarn.lock
+yarn.lock

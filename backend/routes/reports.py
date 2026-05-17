@@ -20,6 +20,68 @@ def parse_date(date_str: str, default_days_ago: int = 30):
         return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
     return datetime.now(timezone.utc) - timedelta(days=default_days_ago)
 
+
+def _deposit_created_at_range_filter(start: datetime, end: datetime) -> dict:
+    """created_at may be stored as ISO string (Node) or BSON datetime (some inserts)."""
+    start_s = start.isoformat()
+    end_s = end.isoformat()
+    return {
+        "$or": [
+            {"created_at": {"$gte": start_s, "$lte": end_s}},
+            {"created_at": {"$gte": start, "$lte": end}},
+        ]
+    }
+
+
+def _deposit_row_amount(d: dict) -> float:
+    u = d.get("amount_usd")
+    if u is not None and u != "":
+        try:
+            v = float(u)
+            if v == v:
+                return v
+        except (TypeError, ValueError):
+            pass
+    for key in ("amount_inr", "amount_php", "amount"):
+        val = d.get(key)
+        if val is None or val == "":
+            continue
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _deposit_bonus(d: dict) -> float:
+    for key in ("bonus_amount", "bonus"):
+        v = d.get(key)
+        if v is None:
+            continue
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _deposit_sort_ts(d: dict) -> float:
+    c = d.get("created_at")
+    if isinstance(c, datetime):
+        return c.timestamp()
+    if isinstance(c, str):
+        try:
+            return datetime.fromisoformat(c.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            return 0.0
+    try:
+        if c is not None and hasattr(c, "timestamp"):
+            return float(c.timestamp())
+    except Exception:
+        pass
+    return 0.0
+
+
 @router.get("/revenue")
 async def get_revenue_report(request: Request, start_date: str = None, end_date: str = None):
     await get_admin_user(request, db)
@@ -298,52 +360,119 @@ async def export_orders_report(request: Request, start_date: str = None, end_dat
     )
 
 @router.get("/payments")
-async def get_payments_report(request: Request, start_date: str = None, end_date: str = None, method: str = None, status: str = None):
+async def get_payments_report(
+    request: Request,
+    start_date: str = None,
+    end_date: str = None,
+    method: str = None,
+    status: str = None,
+    limit: int = Query(1000, ge=1, le=2000),
+):
     await get_admin_user(request, db)
-    
+
     now = datetime.now(timezone.utc)
-    start = parse_date(start_date, 30) if start_date else (now - timedelta(days=30))
+    start = parse_date(start_date, 30) if start_date else (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
     end = parse_date(end_date, 0) if end_date else now
-    
-    query = {"created_at": {"$gte": start.isoformat(), "$lte": end.isoformat()}}
+
+    parts = [_deposit_created_at_range_filter(start, end)]
     if method:
-        query["method"] = method
+        parts.append({"$or": [{"method": method}, {"payment_type": method}]})
     if status:
-        query["status"] = status
-    
-    deposits = await db.deposits.find(query, {"_id": 0}).sort("created_at", -1).to_list(100000)
-    
-    total_amount = sum(d.get("amount", 0) for d in deposits)
-    total_bonus = sum(d.get("bonus_amount", 0) for d in deposits)
-    total_credited = sum(d.get("total_amount", 0) for d in deposits)
-    
-    # By method
+        parts.append({"status": status})
+    query = {"$and": parts} if len(parts) > 1 else parts[0]
+
+    deposits = await db.deposits.find(query).to_list(100000)
+    deposits.sort(key=_deposit_sort_ts, reverse=True)
+
+    total_amount = sum(_deposit_row_amount(d) for d in deposits)
+    total_bonus = sum(_deposit_bonus(d) for d in deposits)
+    credited_ok = {"completed", "success"}
+    total_credited = sum(
+        _deposit_row_amount(d) + _deposit_bonus(d)
+        for d in deposits
+        if str(d.get("status") or "").lower() in credited_ok
+    )
+
     by_method = {}
     for d in deposits:
-        m = d.get("method", "unknown")
-        if m not in by_method:
-            by_method[m] = {"amount": 0, "bonus": 0, "count": 0}
-        by_method[m]["amount"] += d.get("amount", 0)
-        by_method[m]["bonus"] += d.get("bonus_amount", 0)
-        by_method[m]["count"] += 1
-    
-    # By status
+        key = d.get("payment_type") or d.get("method") or "unknown"
+        label = str(key).replace("_", " ")
+        if key not in by_method:
+            by_method[key] = {"method": label, "amount": 0.0, "bonus": 0.0, "count": 0}
+        by_method[key]["amount"] += _deposit_row_amount(d)
+        by_method[key]["bonus"] += _deposit_bonus(d)
+        by_method[key]["count"] += 1
+
     by_status = {}
     for d in deposits:
-        s = d.get("status", "unknown")
+        s = str(d.get("status", "unknown"))
         by_status[s] = by_status.get(s, 0) + 1
-    
+
+    recent_raw = deposits[:limit]
+    user_ids = list({d.get("user_id") for d in recent_raw if d.get("user_id")})
+    users_by_id = {}
+    if user_ids:
+        urows = await db.users.find(
+            {"user_id": {"$in": user_ids}},
+            {"user_id": 1, "username": 1, "email": 1},
+        ).to_list(len(user_ids) + 10)
+        users_by_id = {u["user_id"]: u for u in urows}
+
+    def _serialize_created(c):
+        if isinstance(c, datetime):
+            return c.isoformat()
+        return c
+
+    recent_deposits = []
+    for d in recent_raw:
+        uid = d.get("user_id")
+        u = users_by_id.get(uid) if uid else None
+        oid = d.get("_id")
+        dep_id = d.get("deposit_id") or (str(oid) if oid is not None else "")
+        pt = d.get("payment_type") or d.get("method") or "unknown"
+        recent_deposits.append(
+            {
+                "deposit_id": dep_id,
+                "user_id": uid,
+                "username": d.get("username") or (u or {}).get("username") or "",
+                "email": d.get("user_email") or d.get("email") or (u or {}).get("email"),
+                "amount": round(_deposit_row_amount(d), 4),
+                "bonus_amount": round(_deposit_bonus(d), 4),
+                "status": d.get("status", "unknown"),
+                "method": pt,
+                "source": str(pt).replace("_", " "),
+                "created_at": _serialize_created(d.get("created_at")),
+            }
+        )
+
+    by_method_list = sorted(
+        [
+            {
+                "method": v["method"],
+                "amount": round(v["amount"], 2),
+                "bonus": round(v["bonus"], 2),
+                "count": v["count"],
+            }
+            for v in by_method.values()
+        ],
+        key=lambda x: x["amount"],
+        reverse=True,
+    )
+
     return {
+        "success": True,
         "period": {"start": start.isoformat(), "end": end.isoformat()},
         "summary": {
             "total_deposits": len(deposits),
             "total_amount": round(total_amount, 2),
             "total_bonus": round(total_bonus, 2),
             "total_credited": round(total_credited, 2),
-            "by_status": by_status
+            "total_count": len(deposits),
+            "by_status": by_status,
         },
-        "by_method": [{"method": k, **{kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()}} for k, v in by_method.items()],
-        "recent_deposits": deposits[:50]
+        "by_method": by_method_list,
+        "by_day": [],
+        "recent_deposits": recent_deposits,
     }
 
 @router.get("/payments/export")

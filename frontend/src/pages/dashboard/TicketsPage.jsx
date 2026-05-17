@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MessageSquare, Send } from 'lucide-react';
 import { Card } from '../../components/ui/card';
@@ -26,12 +26,19 @@ const TicketsPage = () => {
   const [newContent, setNewContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const unreadCount = useMemo(() => (tickets || []).filter(t => t.unread_by_user === true).length, [tickets]);
+
   const fetchTickets = async () => {
     setLoading(true);
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await axios.get(`${API}/tickets`, { headers, withCredentials: true });
-      setTickets(response.data || []);
+      const rows = response.data?.tickets || [];
+      const normalized = rows.map((t) => ({
+        ...t,
+        ticket_id: t.ticket_id || t._id,
+      }));
+      setTickets(normalized);
     } catch (error) {
       toast.error('Failed to load tickets');
     } finally {
@@ -56,6 +63,7 @@ const TicketsPage = () => {
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
     await fetchTicketMessages(ticket.ticket_id);
+    fetchTickets();
   };
 
   const handleCreateTicket = async () => {
@@ -70,7 +78,7 @@ const TicketsPage = () => {
       const response = await axios.post(
         `${API}/tickets`,
         { subject: newSubject, message: newContent },
-        { headers, withCredentials: true }
+        { headers, withCredentials: true, timeout: 25000 }
       );
       toast.success('Ticket created successfully');
       setCreateOpen(false);
@@ -78,7 +86,13 @@ const TicketsPage = () => {
       setNewContent('');
       fetchTickets();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create ticket');
+      const msg =
+        error.response?.data?.detail ||
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : null) ||
+        'Failed to create ticket';
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -93,13 +107,19 @@ const TicketsPage = () => {
       await axios.post(
         `${API}/tickets/${selectedTicket.ticket_id}/reply`,
         { message: newMessage },
-        { headers, withCredentials: true }
+        { headers, withCredentials: true, timeout: 25000 }
       );
       setNewMessage('');
       await fetchTicketMessages(selectedTicket.ticket_id);
       fetchTickets();
     } catch (error) {
-      toast.error('Failed to send reply');
+      const msg =
+        error.response?.data?.detail ||
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : null) ||
+        'Failed to send reply';
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -178,6 +198,12 @@ const TicketsPage = () => {
               </Dialog>
             </div>
             <div className="flex-1 overflow-y-auto">
+              {!loading && tickets.length > 0 && (
+                <div className="px-4 py-3 border-b border-white/5 text-xs text-gray-400 flex items-center gap-3">
+                  <span>New Replies: <span className="text-white font-bold">{unreadCount}</span></span>
+                  <span>Total: <span className="text-white font-bold">{tickets.length}</span></span>
+                </div>
+              )}
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin w-8 h-8 border-2 border-electric-blue border-t-transparent rounded-full mx-auto"></div>
@@ -193,9 +219,11 @@ const TicketsPage = () => {
                     <button
                       key={ticket.ticket_id}
                       onClick={() => handleSelectTicket(ticket)}
-                      className={`w-full p-4 text-left hover:bg-white/5 transition-colors ${
-                        selectedTicket?.ticket_id === ticket.ticket_id ? 'bg-electric-blue/10' : ''
-                      }`}
+                      className={
+                        `w-full p-4 text-left hover:bg-white/5 transition-colors ` +
+                        (selectedTicket?.ticket_id === ticket.ticket_id ? 'bg-electric-blue/10 ' : '') +
+                        (ticket.unread_by_user === true ? 'ring-1 ring-electric-blue/35 bg-electric-blue/5 ' : '')
+                      }
                       data-testid={`ticket-${ticket.ticket_id}`}
                     >
                       <div className="flex justify-between items-start mb-1">
@@ -204,7 +232,10 @@ const TicketsPage = () => {
                           {ticket.status}
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">{formatDate(ticket.created_at)}</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs text-gray-500 truncate">#{ticket.ticket_id}</div>
+                        <div className="text-xs text-gray-500 shrink-0">{formatDate(ticket.created_at)}</div>
+                      </div>
                     </button>
                   ))}
                 </div>

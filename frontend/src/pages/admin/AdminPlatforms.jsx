@@ -33,9 +33,12 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import AdminLayout from '../../components/layouts/AdminLayout';
-import { useAuth, API } from '../../App';
-import axios from 'axios';
+import { useAuth } from '../../App';
+import { API } from '../../config';
+import api from '../../lib/axios';
 import { toast } from 'sonner';
+import BulkActionsBar from '../../components/admin/BulkActionsBar';
+import { useBulkSelection } from '../../hooks/useBulkSelection';
 
 const PLATFORM_ICONS = {
   instagram: Instagram,
@@ -90,15 +93,18 @@ const AdminPlatforms = () => {
     order: 99,
     is_active: true
   });
+  const bulk = useBulkSelection();
 
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const fetchPlatforms = async () => {
     try {
-      const res = await axios.get(`${API}/admin/platforms`, { headers, withCredentials: true });
-      setPlatforms(res.data || []);
+      const res = await api.get('/admin/platforms', { headers, withCredentials: true });
+      const data = res.data;
+      setPlatforms(Array.isArray(data) ? data : (data?.platforms ?? []));
     } catch (error) {
       toast.error('Failed to fetch platforms');
+      setPlatforms([]);
     } finally {
       setLoading(false);
     }
@@ -112,10 +118,10 @@ const AdminPlatforms = () => {
     e.preventDefault();
     try {
       if (editingPlatform) {
-        await axios.put(`${API}/admin/platforms/${editingPlatform.platform_id}`, formData, { headers, withCredentials: true });
+        await api.put(`/admin/platforms/${editingPlatform.platform_id}`, formData, { headers, withCredentials: true });
         toast.success('Platform updated');
       } else {
-        await axios.post(`${API}/admin/platforms`, formData, { headers, withCredentials: true });
+        await api.post('/admin/platforms', formData, { headers, withCredentials: true });
         toast.success('Platform created');
       }
       setShowModal(false);
@@ -129,7 +135,7 @@ const AdminPlatforms = () => {
   const handleDelete = async (platformId) => {
     if (!confirm('Delete this platform? This will also remove its category.')) return;
     try {
-      await axios.delete(`${API}/admin/platforms/${platformId}`, { headers, withCredentials: true });
+      await api.delete(`/admin/platforms/${platformId}`, { headers, withCredentials: true });
       toast.success('Platform deleted');
       fetchPlatforms();
     } catch (error) {
@@ -178,10 +184,18 @@ const AdminPlatforms = () => {
           <div>
             <p className="text-gray-400 text-sm">Manage social media platforms and categories</p>
           </div>
-          <Button onClick={() => { resetForm(); setShowModal(true); }} className="bg-cyber-purple hover:bg-cyber-purple/80">
-            <Plus size={18} className="mr-2" />
-            Add Platform
-          </Button>
+          <div className="flex items-center gap-3">
+            <BulkActionsBar
+              type="platforms"
+              selectedIds={bulk.selectedIds}
+              onClear={bulk.clear}
+              onApplied={fetchPlatforms}
+            />
+            <Button onClick={() => { resetForm(); setShowModal(true); }} className="bg-cyber-purple hover:bg-cyber-purple/80">
+              <Plus size={18} className="mr-2" />
+              Add Platform
+            </Button>
+          </div>
         </div>
 
         {/* Platforms Grid */}
@@ -209,9 +223,17 @@ const AdminPlatforms = () => {
                       >
                         <IconComponent size={24} style={{ color: platform.color }} />
                       </div>
-                      <Badge className={platform.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}>
-                        {platform.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${platform.platform_id}`}
+                          checked={bulk.isSelected(platform.platform_id)}
+                          onChange={() => bulk.toggleOne(platform.platform_id)}
+                        />
+                        <Badge className={platform.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}>
+                          {platform.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
                     </div>
                     
                     <h3 className="text-white font-bold mb-1">{platform.name}</h3>

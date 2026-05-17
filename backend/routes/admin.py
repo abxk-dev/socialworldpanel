@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Body, Query, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from datetime import datetime, timezone, timedelta
+import math
 import random
 import csv
 import io
@@ -347,12 +348,63 @@ async def admin_refund_order(request: Request, order_id: str):
 
 # ==================== USERS MANAGEMENT ====================
 
+def _expand_user_ids_for_history(uid_list: list) -> list:
+    """Match login_history whether user_id was stored as str or int (MongoDB)."""
+    out = []
+    seen = set()
+    for uid in uid_list:
+        s = str(uid).strip()
+        if not s:
+            continue
+        if s not in seen:
+            seen.add(s)
+            out.append(s)
+        if s.isdigit():
+            n = int(s)
+            if n not in seen:
+                seen.add(n)
+                out.append(n)
+    return out
+
+
 @router.get("/users")
 async def admin_get_users(request: Request, page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=200)):
     await get_admin_user(request, db)
     skip = (page - 1) * limit
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     total = await db.users.count_documents({})
+    uid_list = list({str(u.get("user_id")) for u in users if u.get("user_id") is not None})
+    uid_match = _expand_user_ids_for_history(uid_list)
+    if uid_match:
+        pipeline = [
+            {"$match": {"user_id": {"$in": uid_match}}},
+            {"$sort": {"logged_in_at": -1}},
+            {
+                "$group": {
+                    "_id": "$user_id",
+                    "last_ip": {"$first": "$ip_address"},
+                    "last_at": {"$first": "$logged_in_at"},
+                }
+            },
+        ]
+        latest_by_uid = {}
+        latest_at_by_uid = {}
+        async for row in db.user_login_history.aggregate(pipeline):
+            uid_key = str(row["_id"])
+            lip = row.get("last_ip")
+            if lip:
+                latest_by_uid[uid_key] = lip
+            lat = row.get("last_at")
+            if lat:
+                latest_at_by_uid[uid_key] = lat
+        for u in users:
+            uid = str(u.get("user_id", ""))
+            merged = u.get("last_login_ip") or u.get("last_ip") or latest_by_uid.get(uid)
+            if merged:
+                u["last_login_ip"] = merged
+            merged_at = u.get("last_login_at") or latest_at_by_uid.get(uid)
+            if merged_at:
+                u["last_login_at"] = merged_at
     return {"users": users, "total": total, "page": page, "pages": (total + limit - 1) // limit}
 
 @router.get("/users/{user_id}")
@@ -370,8 +422,14 @@ async def admin_get_user(request: Request, user_id: str):
 @router.put("/users/{user_id}")
 async def admin_update_user(request: Request, user_id: str, data: dict = Body(...)):
     await get_admin_user(request, db)
-    data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    result = await db.users.update_one({"user_id": user_id}, {"$set": data})
+    allowed = {
+        "name", "email", "username", "full_name", "whatsapp", "phone",
+        "balance", "is_active", "is_suspended", "location", "role",
+        "total_spent", "total_orders", "is_first_deposit",
+    }
+    payload = {k: v for k, v in (data or {}).items() if k in allowed}
+    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.users.update_one({"user_id": user_id}, {"$set": payload})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User updated"}
@@ -588,3 +646,160 @@ async def delete_platform(request: Request, platform_id: str):
     
     await db.platforms.delete_one({"platform_id": platform_id})
     return {"message": "Platform deleted"}
+
+
+# ==================== DEPOSITS (block / unblock — matches Node /api/admin/deposits/*) ====================
+
+
+def _deposit_principal_credited(d: dict) -> float:
+    c = d.get("amount_credited_usd")
+    if c is not None and c != "":
+        try:
+            v = float(c)
+            if math.isfinite(v) and v > 0:
+                return v
+        except (TypeError, ValueError):
+            pass
+    u = d.get("amount_usd")
+    if u is not None and u != "":
+        try:
+            v = float(u)
+            if math.isfinite(v):
+                return v
+        except (TypeError, ValueError):
+            pass
+    for k in ("amount_inr", "amount_php", "amount"):
+        if d.get(k) is None:
+            continue
+        try:
+            return float(d.get(k))
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _deposit_bonus_credited(d: dict) -> float:
+    for k in ("bonus_amount", "bonus"):
+        if d.get(k) is None:
+            continue
+        try:
+            return float(d.get(k))
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _parse_deposit_object_id(raw_id):
+    if raw_id is None:
+        return None
+    s = str(raw_id).strip()
+    if not s:
+        return None
+    try:
+        return ObjectId(s)
+    except Exception:
+        return None
+
+
+@router.post("/deposits/reverse")
+async def admin_deposit_reverse(request: Request, body: dict = Body(...)):
+    """Block a completed deposit and deduct credited amount from user balance."""
+    admin = await get_admin_user(request, db)
+    oid = _parse_deposit_object_id(body.get("deposit_id"))
+    if oid is None:
+        raise HTTPException(status_code=400, detail="Invalid deposit_id")
+
+    deposit = await db.deposits.find_one({"_id": oid})
+    if not deposit:
+        raise HTTPException(status_code=404, detail="Deposit not found")
+
+    st = str(deposit.get("status") or "").lower()
+    if st in ("reversed", "blocked"):
+        raise HTTPException(status_code=400, detail="This deposit is already blocked or reversed")
+    if st not in ("completed", "success"):
+        raise HTTPException(status_code=400, detail="Only completed deposits can be reversed")
+
+    deduct = _deposit_principal_credited(deposit) + _deposit_bonus_credited(deposit)
+    if not math.isfinite(deduct) or deduct <= 0:
+        raise HTTPException(status_code=400, detail="Nothing to reverse for this deposit")
+
+    uid = deposit.get("user_id")
+    if not uid:
+        raise HTTPException(status_code=400, detail="Deposit has no user_id")
+
+    user = await db.users.find_one({"user_id": uid})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    cur = float(user.get("balance") or 0)
+    if cur < deduct:
+        raise HTTPException(status_code=400, detail="User balance is lower than the amount to deduct")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.users.update_one(
+        {"user_id": uid},
+        {"$inc": {"balance": -deduct}, "$set": {"updated_at": now}},
+    )
+    await db.deposits.update_one(
+        {"_id": oid},
+        {
+            "$set": {
+                "status": "blocked",
+                "reversed_at": now,
+                "reversed_by": admin.get("user_id"),
+                "reversed_amount_usd": deduct,
+                "updated_at": now,
+            }
+        },
+    )
+    return {"success": True, "deducted": deduct}
+
+
+@router.post("/deposits/unblock")
+async def admin_deposit_unblock(request: Request, body: dict = Body(...)):
+    """Restore a blocked deposit: credit user balance and set status back to completed."""
+    admin = await get_admin_user(request, db)
+    oid = _parse_deposit_object_id(body.get("deposit_id"))
+    if oid is None:
+        raise HTTPException(status_code=400, detail="Invalid deposit_id")
+
+    deposit = await db.deposits.find_one({"_id": oid})
+    if not deposit:
+        raise HTTPException(status_code=404, detail="Deposit not found")
+
+    st = str(deposit.get("status") or "").lower()
+    if st not in ("blocked", "reversed"):
+        raise HTTPException(status_code=400, detail="Only blocked or reversed deposits can be unblocked")
+
+    stored_raw = deposit.get("reversed_amount_usd")
+    try:
+        stored = float(stored_raw) if stored_raw is not None and stored_raw != "" else 0.0
+    except (TypeError, ValueError):
+        stored = 0.0
+    computed = _deposit_principal_credited(deposit) + _deposit_bonus_credited(deposit)
+    credit = stored if math.isfinite(stored) and stored > 0 else computed
+    if not math.isfinite(credit) or credit <= 0:
+        raise HTTPException(status_code=400, detail="Could not determine amount to restore")
+
+    uid = deposit.get("user_id")
+    if not uid:
+        raise HTTPException(status_code=400, detail="Deposit has no user_id")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.users.update_one(
+        {"user_id": uid},
+        {"$inc": {"balance": credit}, "$set": {"updated_at": now}},
+    )
+    await db.deposits.update_one(
+        {"_id": oid},
+        {
+            "$set": {
+                "status": "completed",
+                "unblocked_at": now,
+                "unblocked_by": admin.get("user_id"),
+                "updated_at": now,
+            },
+            "$unset": {"reversed_amount_usd": ""},
+        },
+    )
+    return {"success": True, "credited": credit}

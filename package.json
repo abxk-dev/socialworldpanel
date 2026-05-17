@@ -1,5 +1,34 @@
 {
+  "scripts": {
+    "dev:api": "node local-api-server.js",
+    "seed:admin": "node scripts/seed-admin.js",
+    "reset:admin": "node scripts/reset-admin.js",
+    "dns:check": "node scripts/check-mongo-dns.js",
+    "dev:clean-ports": "node scripts/kill-dev-ports.js",
+    "dev:frontend": "cd frontend && npm start",
+    "dev": "npm run dev:clean-ports && concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "migrate:optionb": "node lib/migrateToOptionB.js",
+    "fix:admin": "node lib/fixAdminLogin.js",
+    "fix:service-categories": "node scripts/fix-service-category-links.js",
+    "db:check-users": "node scripts/db-check-users.js",
+    "db:fix-users": "node scripts/db-fix-users.js",
+    "db:dupe-emails": "node scripts/db-find-duplicate-emails.js"
+  },
   "dependencies": {
-    "date-fns": "^3.6.0"
+    "archiver": "^7.0.1",
+    "axios": "^1.13.6",
+    "bcryptjs": "^3.0.2",
+    "cheerio": "^1.2.0",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.1.0",
+    "paytmchecksum": "^1.5.0",
+    "pdfkit": "^0.18.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

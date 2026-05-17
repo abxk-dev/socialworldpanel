@@ -32,7 +32,9 @@ async def get_public_settings():
         "panel_name": settings.get("panel_name", "Social World Panel"),
         "panel_logo": settings.get("panel_logo"),
         "favicon": settings.get("favicon"),
-        "maintenance_mode": settings.get("maintenance_mode", False)
+        "maintenance_mode": settings.get("maintenance_mode", False),
+        "new_order_sidebar_note": settings.get("new_order_sidebar_note") or "",
+        "new_order_sidebar_note_format": settings.get("new_order_sidebar_note_format") or "html",
     }
 
 @router.get("/services")

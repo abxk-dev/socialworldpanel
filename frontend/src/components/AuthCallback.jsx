@@ -1,49 +1,65 @@
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API, useAuth } from '../App';
+import api from '../lib/axios';
+import { useAuth } from '../App';
 
 const AuthCallback = () => {
   const hasProcessed = useRef(false);
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { setToken, setUser } = useAuth();
 
   useEffect(() => {
-    // Use ref to prevent double processing in StrictMode
     if (hasProcessed.current) return;
     hasProcessed.current = true;
 
     const processAuth = async () => {
-      const hash = window.location.hash;
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      let token = null;
+
+      const tokenFromHash = hash.match(/[#&]token=([^&]+)/);
+      const tokenFromQuery = search.match(/[?&]token=([^&]+)/);
+      if (tokenFromHash) token = decodeURIComponent(tokenFromHash[1]);
+      else if (tokenFromQuery) token = decodeURIComponent(tokenFromQuery[1]);
+
+      if (token) {
+        try {
+          localStorage.setItem('token', token);
+          setToken(token);
+          const response = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+          setUser(response.data);
+          window.dispatchEvent(new Event('swp-login'));
+          window.history.replaceState(null, '', window.location.pathname);
+          navigate('/dashboard', { replace: true });
+          return;
+        } catch (err) {
+          console.error('Auth callback error:', err);
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      }
+
       const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-      
-      if (!sessionIdMatch) {
-        navigate('/login', { replace: true });
-        return;
+      if (sessionIdMatch) {
+        try {
+          const response = await api.post('/auth/session', { session_id: sessionIdMatch[1] }, { withCredentials: true });
+          setUser(response.data);
+          window.dispatchEvent(new Event('swp-login'));
+          window.history.replaceState(null, '', window.location.pathname);
+          navigate('/dashboard', { replace: true });
+          return;
+        } catch (error) {
+          console.error('Auth callback error:', error);
+        }
       }
 
-      const sessionId = sessionIdMatch[1];
-
-      try {
-        const response = await axios.post(
-          `${API}/auth/session`,
-          { session_id: sessionId },
-          { withCredentials: true }
-        );
-
-        setUser(response.data);
-        
-        // Clear hash and navigate to dashboard
-        window.history.replaceState(null, '', window.location.pathname);
-        navigate('/dashboard', { replace: true, state: { user: response.data } });
-      } catch (error) {
-        console.error('Auth callback error:', error);
-        navigate('/login', { replace: true });
-      }
+      const error = new URLSearchParams(search).get('error') || new URLSearchParams(hash.slice(1)).get('error');
+      navigate('/login' + (error ? `?error=${encodeURIComponent(error)}` : ''), { replace: true });
     };
 
     processAuth();
-  }, [navigate, setUser]);
+  }, [navigate, setToken, setUser]);
 
   return (
     <div className="min-h-screen bg-dark-bg flex items-center justify-center">

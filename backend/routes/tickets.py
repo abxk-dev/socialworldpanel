@@ -1,3 +1,4 @@
+import random
 from fastapi import APIRouter, HTTPException, Request, Body
 from datetime import datetime, timezone
 
@@ -13,11 +14,25 @@ def init_router(database):
     db = database
     return router
 
+def _generate_ticket_id():
+    return random.randint(100, 9999)
+
 @router.post("")
 async def create_ticket(request: Request, ticket_data: TicketCreate):
     user = await get_current_user(request, db)
     
+    ticket_id = None
+    for _ in range(15):
+        candidate = _generate_ticket_id()
+        existing = await db.tickets.find_one({"ticket_id": candidate}, {"_id": 1})
+        if not existing:
+            ticket_id = candidate
+            break
+    if ticket_id is None:
+        ticket_id = 1000 + int(datetime.now(timezone.utc).timestamp() % 100000)
+    
     ticket = Ticket(
+        ticket_id=ticket_id,
         user_id=user["user_id"],
         subject=ticket_data.subject,
         priority=ticket_data.priority
@@ -45,27 +60,34 @@ async def get_tickets(request: Request):
     user = await get_current_user(request, db)
     return await db.tickets.find({"user_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
+def _parse_ticket_id(ticket_id: str):
+    if ticket_id.isdigit():
+        return int(ticket_id)
+    return ticket_id
+
 @router.get("/{ticket_id}")
 async def get_ticket(request: Request, ticket_id: str):
     user = await get_current_user(request, db)
-    ticket = await db.tickets.find_one({"ticket_id": ticket_id, "user_id": user["user_id"]}, {"_id": 0})
+    tid = _parse_ticket_id(ticket_id)
+    ticket = await db.tickets.find_one({"ticket_id": tid, "user_id": user["user_id"]}, {"_id": 0})
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    messages = await db.ticket_messages.find({"ticket_id": ticket_id}, {"_id": 0}).sort("created_at", 1).to_list(100)
+    messages = await db.ticket_messages.find({"ticket_id": tid}, {"_id": 0}).sort("created_at", 1).to_list(100)
     return {"ticket": ticket, "messages": messages}
 
 @router.post("/{ticket_id}/reply")
 async def reply_ticket(request: Request, ticket_id: str, message: str = Body(..., embed=True)):
     user = await get_current_user(request, db)
-    ticket = await db.tickets.find_one({"ticket_id": ticket_id, "user_id": user["user_id"]}, {"_id": 0})
+    tid = _parse_ticket_id(ticket_id)
+    ticket = await db.tickets.find_one({"ticket_id": tid, "user_id": user["user_id"]}, {"_id": 0})
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    msg = TicketMessage(ticket_id=ticket_id, user_id=user["user_id"], message=message)
+    msg = TicketMessage(ticket_id=tid, user_id=user["user_id"], message=message)
     msg_dict = msg.model_dump()
     msg_dict["created_at"] = msg_dict["created_at"].isoformat()
     await db.ticket_messages.insert_one(msg_dict)
     
-    await db.tickets.update_one({"ticket_id": ticket_id}, {"$set": {"status": "open"}})
+    await db.tickets.update_one({"ticket_id": tid}, {"$set": {"status": "open"}})
     return {"message": "Reply sent"}

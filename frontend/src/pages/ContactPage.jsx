@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, MessageSquare, Send, MapPin, Clock } from 'lucide-react';
+import { Mail, MessageSquare, Send, MapPin, Clock, MessageCircle } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -10,25 +10,49 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
+import api from '../lib/axios';
+import { useAuth } from '../App';
 
 const ContactPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const { token } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSending(true);
-    // Simulate sending
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success('Message sent! We\'ll get back to you soon.');
-    setName('');
-    setEmail('');
-    setSubject('');
-    setMessage('');
-    setSending(false);
+    try {
+      // If user is logged in, also create a support ticket so it appears in admin/user tickets
+      if (token) {
+        const headers = { Authorization: `Bearer ${token}` };
+        const ticketMessageLines = [
+          `Contact form submission from: ${name}`,
+          `Email: ${email}`,
+          whatsapp ? `WhatsApp: ${whatsapp}` : null,
+          '',
+          message,
+        ].filter(Boolean);
+        await api.post(
+          '/tickets',
+          { subject, message: ticketMessageLines.join('\n') },
+          { headers, withCredentials: true }
+        );
+      }
+      toast.success("Message sent! We'll get back to you soon.");
+      setName('');
+      setEmail('');
+      setWhatsapp('');
+      setSubject('');
+      setMessage('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -36,7 +60,8 @@ const ContactPage = () => {
       <Navbar />
       <Toaster position="top-right" theme="dark" />
 
-      <section className="py-20 px-6">
+      <div className="pt-navbar">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -60,6 +85,7 @@ const ContactPage = () => {
             >
               {[
                 { icon: Mail, title: 'Email Us', info: 'support@socialworldpanel.com', desc: 'We respond within 24 hours' },
+                { icon: MessageCircle, title: 'WhatsApp', info: '+91-XXXXXXXXXX', desc: 'Tap support icon to chat instantly' },
                 { icon: MessageSquare, title: 'Live Chat', info: 'Available 24/7', desc: 'Get instant help' },
                 { icon: MapPin, title: 'Location', info: 'Global Services', desc: 'Serving customers worldwide' },
                 { icon: Clock, title: 'Business Hours', info: '24/7', desc: 'Always available' },
@@ -112,6 +138,16 @@ const ContactPage = () => {
                         data-testid="contact-email"
                       />
                     </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-gray-400">WhatsApp Number (optional)</Label>
+                      <Input
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="mt-2 bg-deep-navy border-white/10"
+                        data-testid="contact-whatsapp"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label className="text-gray-400">Subject</Label>
@@ -158,6 +194,7 @@ const ContactPage = () => {
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 };

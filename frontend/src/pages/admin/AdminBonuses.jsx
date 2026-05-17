@@ -27,12 +27,15 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import AdminLayout from '../../components/layouts/AdminLayout';
-import { useAuth, API } from '../../App';
-import axios from 'axios';
+import { useAuth } from '../../App';
+import { API } from '../../config';
+import api from '../../lib/axios';
 import { toast } from 'sonner';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const AdminBonuses = () => {
   const { token } = useAuth();
+  const { formatPrice } = useCurrency();
   const [tiers, setTiers] = useState([]);
   const [promotions, setPromotions] = useState([]);
   const [settings, setSettings] = useState({
@@ -70,13 +73,14 @@ const AdminBonuses = () => {
   const fetchData = async () => {
     try {
       const [tiersRes, promosRes, settingsRes] = await Promise.all([
-        axios.get(`${API}/admin/bonus/tiers`, { headers, withCredentials: true }),
-        axios.get(`${API}/admin/bonus/promotions`, { headers, withCredentials: true }),
-        axios.get(`${API}/admin/bonus/settings`, { headers, withCredentials: true })
+        api.get('/admin/bonus/tiers', { headers, withCredentials: true }),
+        api.get('/admin/bonus/promotions', { headers, withCredentials: true }),
+        api.get('/admin/bonus/settings', { headers, withCredentials: true })
       ]);
-      setTiers(tiersRes.data);
-      setPromotions(promosRes.data);
-      setSettings(settingsRes.data);
+      const toArray = (d, key) => Array.isArray(d) ? d : (d?.[key] ?? []);
+      setTiers(toArray(tiersRes.data, 'tiers'));
+      setPromotions(toArray(promosRes.data, 'promotions'));
+      setSettings(settingsRes.data && typeof settingsRes.data === 'object' ? settingsRes.data : {});
     } catch (error) {
       toast.error('Failed to fetch bonus data');
     } finally {
@@ -91,7 +95,7 @@ const AdminBonuses = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API}/admin/bonus/settings`, settings, { headers, withCredentials: true });
+      await api.put('/admin/bonus/settings', settings, { headers, withCredentials: true });
       toast.success('Settings saved');
     } catch (error) {
       toast.error('Failed to save settings');
@@ -104,10 +108,10 @@ const AdminBonuses = () => {
     e.preventDefault();
     try {
       if (editingTier) {
-        await axios.put(`${API}/admin/bonus/tiers/${editingTier.tier_id}`, tierForm, { headers, withCredentials: true });
+        await api.put(`/admin/bonus/tiers/${editingTier.tier_id}`, tierForm, { headers, withCredentials: true });
         toast.success('Tier updated');
       } else {
-        await axios.post(`${API}/admin/bonus/tiers`, tierForm, { headers, withCredentials: true });
+        await api.post('/admin/bonus/tiers', tierForm, { headers, withCredentials: true });
         toast.success('Tier created');
       }
       setShowTierModal(false);
@@ -127,10 +131,10 @@ const AdminBonuses = () => {
         end_date: new Date(promoForm.end_date).toISOString()
       };
       if (editingPromo) {
-        await axios.put(`${API}/admin/bonus/promotions/${editingPromo.promo_id}`, data, { headers, withCredentials: true });
+        await api.put(`/admin/bonus/promotions/${editingPromo.promo_id}`, data, { headers, withCredentials: true });
         toast.success('Promotion updated');
       } else {
-        await axios.post(`${API}/admin/bonus/promotions`, data, { headers, withCredentials: true });
+        await api.post('/admin/bonus/promotions', data, { headers, withCredentials: true });
         toast.success('Promotion created');
       }
       setShowPromoModal(false);
@@ -144,7 +148,7 @@ const AdminBonuses = () => {
   const deleteTier = async (tierId) => {
     if (!confirm('Delete this tier?')) return;
     try {
-      await axios.delete(`${API}/admin/bonus/tiers/${tierId}`, { headers, withCredentials: true });
+      await api.delete(`/admin/bonus/tiers/${tierId}`, { headers, withCredentials: true });
       toast.success('Tier deleted');
       fetchData();
     } catch (error) {
@@ -155,7 +159,7 @@ const AdminBonuses = () => {
   const deletePromo = async (promoId) => {
     if (!confirm('Delete this promotion?')) return;
     try {
-      await axios.delete(`${API}/admin/bonus/promotions/${promoId}`, { headers, withCredentials: true });
+      await api.delete(`/admin/bonus/promotions/${promoId}`, { headers, withCredentials: true });
       toast.success('Promotion deleted');
       fetchData();
     } catch (error) {
@@ -321,8 +325,8 @@ const AdminBonuses = () => {
                     ) : (
                       tiers.map((tier) => (
                         <TableRow key={tier.tier_id} className="border-cyber-purple/10 hover:bg-white/5">
-                          <TableCell className="text-white font-bold">${tier.min_amount}</TableCell>
-                          <TableCell className="text-white font-bold">${tier.max_amount}</TableCell>
+                          <TableCell className="text-white font-bold">{formatPrice(tier.min_amount)}</TableCell>
+                          <TableCell className="text-white font-bold">{formatPrice(tier.max_amount)}</TableCell>
                           <TableCell>
                             <Badge className="bg-neon-green/20 text-neon-green">
                               +{tier.bonus_percent}%
@@ -384,8 +388,8 @@ const AdminBonuses = () => {
                       <div className="space-y-2 text-sm text-gray-400">
                         <div className="flex items-center gap-2">
                           <DollarSign size={14} />
-                          <span>Min: ${promo.min_deposit}</span>
-                          {promo.max_bonus && <span>| Max: ${promo.max_bonus}</span>}
+                          <span>Min: {formatPrice(promo.min_deposit)}</span>
+                          {promo.max_bonus && <span>| Max: {formatPrice(promo.max_bonus)}</span>}
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar size={14} />

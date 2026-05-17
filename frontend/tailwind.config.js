@@ -8,45 +8,46 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // Use SocialWorldPanel theme CSS variables directly
+        border: 'var(--border)',
+        input: 'var(--input-bg)',
+        ring: 'var(--border-focus)',
+        background: 'var(--bg-primary)',
+        foreground: 'var(--text-primary)',
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))"
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--btn-primary-text)',
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))"
+          DEFAULT: 'var(--bg-secondary)',
+          foreground: 'var(--text-primary)',
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))"
+          DEFAULT: 'var(--error)',
+          foreground: 'var(--btn-primary-text)',
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))"
+          DEFAULT: 'var(--text-muted)',
+          foreground: 'var(--bg-primary)',
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))"
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--btn-primary-text)',
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))"
+          DEFAULT: 'var(--bg-card)',
+          foreground: 'var(--text-primary)',
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))"
+          DEFAULT: 'var(--bg-card)',
+          foreground: 'var(--text-primary)',
         },
         // Custom SMM Panel colors
-        'deep-navy': '#0A0F1E',
-        'electric-blue': '#00D4FF',
-        'neon-green': '#00FF88',
-        'cyber-purple': '#8B5CF6',
-        'dark-bg': '#030407',
+        'deep-navy': 'var(--bg-tertiary)',
+        'electric-blue': 'var(--accent)',
+        'neon-green': 'var(--success)',
+        'cyber-purple': 'var(--accent-secondary)',
+        'dark-bg': 'var(--bg-primary)',
       },
       fontFamily: {
         'exo': ['"Exo 2"', 'sans-serif'],
@@ -108,8 +109,8 @@ module.exports = {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'cyber-gradient': 'linear-gradient(135deg, #00D4FF 0%, #8B5CF6 100%)',
-        'neon-gradient': 'linear-gradient(90deg, #00D4FF 0%, #00FF88 50%, #8B5CF6 100%)',
+        'cyber-gradient': 'linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%)',
+        'neon-gradient': 'linear-gradient(90deg, var(--accent) 0%, var(--success) 50%, var(--accent-secondary) 100%)',
       },
       boxShadow: {
         'neon': '0 0 20px rgba(0, 212, 255, 0.5)',

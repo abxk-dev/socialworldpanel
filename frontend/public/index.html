@@ -2,12 +2,34 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#000000" />
-        <meta name="description" content="A product of emergent.sh" />
+        <meta name="description" content="SocialWorldPanel is a powerful Watchtime SMM Panel offering high retention YouTube watchtime, instant start delivery, secure orders and reseller-friendly SMM services." />
+        <meta name="keywords" content="watchtime smm panel, youtube watchtime smm panel, high retention watchtime, smm panel provider, cheapest watchtime panel">
+        <!-- Favicon & app icons -->
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <!-- CRA default favicon tags (kept for compatibility) -->
+        <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+        <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+        <!-- Search engine verification (static so it appears in View Source) -->
+        <meta name="google-site-verification" content="cipJDAORhtR_cf0UGNcRKKTUUYSbpz19OXtwV8ioibU" />
+        <meta name="msvalidate.01" content="57E11F1FE5DC6041B23AC691F7DEC65E" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&family=Exo+2:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+          media="print"
+          onload="this.media='all'"
+        />
+        <noscript>
+          <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&family=Exo+2:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+          />
+        </noscript>
         <!--
         manifest.json provides metadata used when your web app is installed on a
         user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -21,9 +43,77 @@
         work correctly both with client-side routing and a non-root public URL.
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
-        <title>Emergent | Fullstack App</title>
+        <title>Watchtime SMM Panel – High Retention YouTube Watchtime | SocialWorldPanel</title>
+
+        <script>
+            // Prevent flash of wrong theme before React mounts
+            (function() {
+              try {
+                var tRaw = localStorage.getItem('swp_theme') || 'dark';
+                var t = (tRaw === 'light' || tRaw === 'day') ? 'light' : 'dark';
+                var vars = t === 'light'
+                  ? {
+                      '--bg-primary': '#ffffff',
+                      '--bg-secondary': '#f8fafc',
+                      '--bg-tertiary': '#f1f5f9',
+                      '--bg-card': '#ffffff',
+                      '--accent': '#2563eb',
+                      '--accent-secondary': '#3b82f6',
+                      '--success': '#059669',
+                      '--border': 'rgba(226,232,240,1)',
+                      '--border-focus': '#2563eb',
+                      '--input-bg': '#ffffff',
+                      '--input-border': '#e2e8f0',
+                      '--input-border-focus': '#2563eb',
+                      '--input-text': '#0f172a',
+                      '--text-primary': '#0f172a',
+                      '--text-secondary': '#475569',
+                      '--text-muted': '#94a3b8',
+                      '--text-disabled': '#cbd5e1',
+                      '--text-inverse': '#ffffff',
+                      '--theme-bg': '#e8eef4',
+                      '--theme-text': '#0f172a',
+                      '--theme-muted': '#94a3b8',
+                      '--theme-border': '#e2e8f0',
+                      '--theme-accent': '#2563eb',
+                      '--theme-accent-alt': '#2563eb',
+                    }
+                  : {
+                      '--bg-primary': '#060b14',
+                      '--bg-secondary': '#0a1628',
+                      '--bg-tertiary': '#0f1f35',
+                      '--bg-card': 'rgba(255,255,255,0.02)',
+                      '--accent': '#00d2ff',
+                      '--accent-secondary': '#0070f3',
+                      '--success': '#10b981',
+                      '--border': 'rgba(255,255,255,0.07)',
+                      '--border-focus': 'rgba(0,210,255,0.4)',
+                      '--input-bg': 'rgba(255,255,255,0.04)',
+                      '--input-border': 'rgba(255,255,255,0.1)',
+                      '--input-border-focus': 'rgba(0,210,255,0.4)',
+                      '--input-text': '#f1f5f9',
+                      '--text-primary': '#f1f5f9',
+                      '--text-secondary': '#94a3b8',
+                      '--text-muted': '#475569',
+                      '--text-disabled': '#334155',
+                      '--text-inverse': '#0f172a',
+                      '--theme-bg': '#030407',
+                      '--theme-text': '#f8fafc',
+                      '--theme-muted': '#94a3b8',
+                      '--theme-border': 'rgba(255, 255, 255, 0.1)',
+                      '--theme-accent': '#00d2ff',
+                      '--theme-accent-alt': '#00d2ff',
+                    };
+                var root = document.documentElement;
+                Object.keys(vars).forEach(function(k) { root.style.setProperty(k, vars[k]); });
+                root.setAttribute('data-theme', t === 'light' ? 'day' : 'night');
+                if (document.body) document.body.style.background = vars['--bg-primary'];
+              } catch (e) {}
+            })();
+        </script>
+
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
-        <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <!-- Emergent scripts removed -->
         <!--
         These two scripts have been added for the Visual Edits, please do not edit or remove them
         -->
@@ -31,10 +121,8 @@
             // Only load visual edit scripts when inside an iframe
             if (window.self !== window.top) {
                 // Load debug monitor script
-                var debugMonitorScript = document.createElement('script');
-                debugMonitorScript.src = 'https://assets.emergent.sh/scripts/debug-monitor.js';
-                document.head.appendChild(debugMonitorScript);
-
+                // Removed Emergent debug monitor
+                
                 // Configure Tailwind
                 window.tailwind = window.tailwind || {};
                 tailwind.config = {
@@ -49,7 +137,39 @@
         </script>
     </head>
     <body>
-        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <noscript>
+            <p>You need to enable JavaScript to run this app.</p>
+            <article id="seo-static-content" style="max-width:800px;margin:2rem auto;padding:0 1.5rem;font-family:system-ui,sans-serif;line-height:1.6;color:#e5e7eb;">
+                <h1 style="font-size:1.75rem;margin-bottom:1rem;">YouTube Watchtime SMM Panel – Buy 4000 Hours High Retention Watchtime Instantly</h1>
+                <p>SocialWorldPanel is the number one trusted YouTube Watchtime SMM Panel offering high retention watchtime with instant delivery. Whether you need 4000 watch hours for YouTube monetization or want to grow your channel faster, our platform provides the cheapest, safest, and most reliable social media marketing services available online.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">Why Choose SocialWorldPanel for YouTube Watchtime?</h2>
+                <p>Getting monetized on YouTube requires 4000 watch hours and 1000 subscribers. SocialWorldPanel makes this process faster and more affordable than any other SMM panel. Our high retention watchtime services ensure your videos receive genuine-looking views that count toward your monetization threshold. With instant start, secure orders, and 24/7 support, we are the most trusted watchtime provider for content creators worldwide.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">Our Social Media Marketing Services</h2>
+                <p>Beyond YouTube watchtime, SocialWorldPanel offers over 1000 social media services across all major platforms. Buy Instagram followers, likes, views and story views. Boost your TikTok with real followers and video likes. Grow your Facebook page with genuine likes and post engagement. Increase your Telegram channel members and Twitter followers at the most competitive prices in the market.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">Instagram Services</h3>
+                <p>Buy real Instagram followers, likes, views, story views, reel views, comments and saves. All Instagram services start instantly with high retention and no password required.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">YouTube Services</h3>
+                <p>Buy YouTube subscribers, views, likes, comments and high retention watchtime for channel monetization. Our YouTube watchtime is safe and compliant with YouTube guidelines.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">TikTok Services</h3>
+                <p>Grow your TikTok account with real followers, video likes, views and shares. Delivery is fast with guaranteed results so your content can reach the For You page more often.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">Cheapest SMM Panel with Instant Delivery</h2>
+                <p>SocialWorldPanel offers competitive pricing in the SMM industry. Reseller-friendly rates allow businesses and agencies to profit while providing top-quality services. We support UPI, Paytm, bank transfer for Indian customers, and international payment options for global clients.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">How to Get Started</h2>
+                <p>Create your free account, add funds to your wallet, browse our full list of services and place your order in seconds. Most services start within minutes. You can manage orders and balance from your dashboard or use our API for integration.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">Safe and Trusted Social Media Growth</h2>
+                <p>All our services are designed to be safe for your social media accounts. We never ask for your passwords; orders only require your public profile URL or post link. Social media growth through SMM panels is a widely used strategy by businesses and creators globally.</p>
+                <h2 style="font-size:1.35rem;margin-top:1.5rem;">Frequently Asked Questions</h2>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">What is an SMM Panel?</h3>
+                <p>An SMM Panel (Social Media Marketing Panel) is an online platform where you can buy social media services such as followers, likes, views, and watchtime to grow your presence across YouTube, Instagram, TikTok, and other platforms.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">Is SocialWorldPanel safe to use?</h3>
+                <p>Yes. We do not require your password. You only provide a public profile or post link. We monitor service stability and deliver high retention watchtime and engagement that complies with platform guidelines.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">How fast is delivery?</h3>
+                <p>Services typically start within minutes. Full delivery time depends on the quantity ordered. You can track every order in your dashboard.</p>
+                <h3 style="font-size:1.15rem;margin-top:1.25rem;">Do you offer refunds?</h3>
+                <p>Refunds are offered for undelivered orders. See our Terms and Conditions or Contact page for full details.</p>
+                <p style="margin-top:1.5rem;">Visit our About Us page or Blog for more strategies on social media growth. SocialWorldPanel – your trusted Watchtime SMM Panel for YouTube and all major platforms.</p>
+            </article>
+        </noscript>
         <div id="root"></div>
         <!--
       This HTML file is a template.
@@ -61,51 +181,7 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-        <a
-            id="emergent-badge"
-            target="_blank"
-            href="https://app.emergent.sh/?utm_source=emergent-badge"
-            style="
-                display: inline-flex !important;
-                box-sizing: border-box;
-                width: 178px;
-                height: 40px;
-                padding: 8px 12px 8px 12px;
-                align-items: center !important;
-                gap: 8px;
-                border-radius: 50px !important;
-                background: #000 !important;
-                position: fixed !important;
-                bottom: 16px;
-                right: 16px;
-                text-decoration: none;
-                font-family: -apple-system, BlinkMacSystemFont,
-                    &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell,
-                    &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;,
-                    sans-serif !important;
-                font-size: 12px !important;
-                z-index: 9999 !important;
-            "
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M15.5702 8.13142C15.7729 8.0412 16.0007 8.18878 15.9892 8.4103C15.8374 11.3192 14.0965 14.0405 11.2531 15.3065C8.40964 16.5725 5.2224 16.0453 2.95912 14.2117C2.78676 14.072 2.82955 13.804 3.03219 13.7137L4.95677 12.8568C5.04866 12.8159 5.15446 12.823 5.24204 12.8725C6.73377 13.7153 8.59176 13.8649 10.2772 13.1145C11.9626 12.3641 13.0947 10.8833 13.4665 9.21075C13.4883 9.11256 13.5539 9.02918 13.6457 8.98827L15.5702 8.13142Z" fill="white"/>
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M15.3066 4.74698L15.5067 5.19653C15.5759 5.35178 15.5061 5.53366 15.3508 5.60278L1.29992 11.8586C1.14467 11.9278 0.962794 11.8579 0.893675 11.7027L0.701732 11.2716L0.693457 11.2531C-1.10317 7.21778 0.711626 2.49007 4.74692 0.693443C8.78221 -1.10318 13.51 0.711693 15.3066 4.74698ZM2.82356 8.55367C2.63552 8.63739 2.41991 8.51617 2.40853 8.31065C2.28373 6.05724 3.53858 3.85787 5.72286 2.88536C7.90715 1.91286 10.3813 2.45199 11.9724 4.05256C12.1175 4.19854 12.0633 4.43988 11.8753 4.5236L2.82356 8.55367Z" fill="white"/>
-            </svg>
-            <p
-                style="
-                    color: #FFF !important;
-                    font-family: 'Inter', sans-serif !important;
-                    font-size: 13px !important;
-                    font-style: normal !important;
-                    font-weight: 600 !important;
-                    line-height: 20px !important;
-                    margin: 0 !important;
-                    white-space: nowrap !important;
-                "
-            >
-                Made with Emergent
-            </p>
-        </a>
+
         <script>
             !(function (t, e) {
                 var o, n, p, r;
@@ -179,3 +255,4 @@
         </script>
     </body>
 </html>
+

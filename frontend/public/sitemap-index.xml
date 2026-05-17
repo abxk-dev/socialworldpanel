@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Static pages sitemap -->
+  <sitemap>
+    <loc>https://socialworldpanel.com/sitemap.xml</loc>
+    <lastmod>2026-03-13</lastmod>
+  </sitemap>
+
+  <!-- Dynamic sitemap (blog posts + services) -->
+  <sitemap>
+    <loc>https://socialworldpanel.com/api/sitemap</loc>
+    <lastmod>2026-03-13</lastmod>
+  </sitemap>
+
+</sitemapindex>
+

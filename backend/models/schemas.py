@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 import uuid
 
@@ -114,7 +114,7 @@ class TicketCreate(BaseModel):
     order_id: Optional[str] = None
 
 class Ticket(BaseModel):
-    ticket_id: str = Field(default_factory=lambda: f"tkt_{uuid.uuid4().hex[:8]}")
+    ticket_id: Union[int, str]
     user_id: str
     subject: str
     priority: str = "normal"
@@ -123,7 +123,7 @@ class Ticket(BaseModel):
 
 class TicketMessage(BaseModel):
     message_id: str = Field(default_factory=lambda: f"msg_{uuid.uuid4().hex[:8]}")
-    ticket_id: str
+    ticket_id: Union[int, str]
     user_id: str
     message: str
     is_admin: bool = False

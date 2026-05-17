@@ -34,6 +34,7 @@ if (config.enableHealthCheck) {
 
 const webpackConfig = {
   eslint: {
+    enable: false, // avoid ESLintWebpackPlugin resolution errors in dev
     configure: {
       extends: ["plugin:react-hooks/recommended"],
       rules: {
@@ -78,6 +79,14 @@ if (config.enableVisualEdits && babelMetadataPlugin) {
 }
 
 webpackConfig.devServer = (devServerConfig) => {
+  // Ensure allowedHosts is valid (avoid "non-empty string" schema error)
+  if (devServerConfig.allowedHosts && Array.isArray(devServerConfig.allowedHosts)) {
+    devServerConfig.allowedHosts = devServerConfig.allowedHosts.filter((h) => h && typeof h === "string");
+  }
+  if (!devServerConfig.allowedHosts || devServerConfig.allowedHosts.length === 0) {
+    devServerConfig.allowedHosts = "all";
+  }
+
   // Apply visual edits dev server setup only if enabled
   if (config.enableVisualEdits && setupDevServer) {
     devServerConfig = setupDevServer(devServerConfig);

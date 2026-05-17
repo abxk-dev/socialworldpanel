@@ -8,9 +8,10 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
+import { API } from '../config';
 
 const ApiDocsPage = () => {
-  const apiUrl = `${process.env.REACT_APP_BACKEND_URL}/api/v2`;
+  const apiUrl = API.replace(/\/api\/?$/, '') + '/api';
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -49,7 +50,8 @@ const ApiDocsPage = () => {
       <Navbar />
       <Toaster position="top-right" theme="dark" />
 
-      <section className="py-20 px-6">
+      <div className="pt-navbar">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -209,6 +211,7 @@ const ApiDocsPage = () => {
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 };

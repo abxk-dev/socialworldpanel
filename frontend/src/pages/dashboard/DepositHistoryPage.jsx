@@ -6,12 +6,14 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { useAuth, API } from '../../App';
+import { useCurrency } from '../../context/CurrencyContext';
 import { toast } from 'sonner';
 import { Toaster } from '../../components/ui/sonner';
 import axios from 'axios';
 
 const DepositHistoryPage = () => {
   const { token } = useAuth();
+  const { formatPrice } = useCurrency();
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -39,7 +41,8 @@ const DepositHistoryPage = () => {
     const classes = {
       pending: 'status-pending',
       completed: 'status-completed',
-      failed: 'status-cancelled'
+      failed: 'status-cancelled',
+      rejected: 'status-cancelled',
     };
     return classes[status] || 'status-pending';
   };
@@ -97,18 +100,30 @@ const DepositHistoryPage = () => {
                     </thead>
                     <tbody>
                       {deposits.map((deposit) => (
-                        <tr key={deposit.deposit_id} className="border-t border-white/5 hover:bg-white/5">
+                        <tr
+                          key={deposit.deposit_id || deposit._id || `${deposit.created_at}-${deposit.payment_type}`}
+                          className="border-t border-white/5 hover:bg-white/5"
+                        >
                           <td className="p-4 text-gray-400 text-sm">{formatDate(deposit.created_at)}</td>
                           <td className="p-4">
-                            <span className="font-mono text-sm text-gray-300">{deposit.transaction_id || deposit.deposit_id}</span>
+                            <span className="font-mono text-sm text-gray-300">
+                              {deposit.transaction_id || deposit.deposit_id || '—'}
+                            </span>
                           </td>
-                          <td className="p-4 text-white capitalize">{deposit.method}</td>
+                          <td className="p-4 text-white capitalize">
+                            {deposit.method || deposit.payment_type?.replace(/_/g, ' ') || '—'}
+                          </td>
                           <td className="p-4">
                             <Badge className={`${getStatusClass(deposit.status)} capitalize`}>
                               {deposit.status}
                             </Badge>
                           </td>
-                          <td className="p-4 text-right text-neon-green font-bold">+${deposit.amount?.toFixed(2)}</td>
+                          <td className="p-4 text-right text-neon-green font-bold">
+                            <div>+{formatPrice(Number(deposit.amount) || 0)}</div>
+                            {deposit.payment_type === 'manual_qr' && deposit.amount_inr != null && deposit.amount_inr > 0 && (
+                              <div className="text-gray-500 font-normal text-xs mt-1">Paid ₹{Number(deposit.amount_inr).toLocaleString()}</div>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

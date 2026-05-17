@@ -3,36 +3,42 @@ import { motion } from 'framer-motion';
 import { 
   DollarSign, Users, ShoppingCart, Clock, TrendingUp, 
   TrendingDown, AlertTriangle, CheckCircle, XCircle, Loader2,
-  ArrowUpRight, ArrowDownRight, Server
+  ArrowUpRight, ArrowDownRight, Server, Sparkles
 } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import AdminLayout from '../../components/layouts/AdminLayout';
-import { useAuth, API } from '../../App';
-import axios from 'axios';
+import { useAuth } from '../../App';
+import { API } from '../../config';
+import api from '../../lib/axios';
+import { useCurrency } from '../../context/CurrencyContext';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
 
 const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#6366F1'];
 
 const AdminDashboard = () => {
   const { token } = useAuth();
+  const { formatPrice } = useCurrency();
   const [data, setData] = useState(null);
   const [charts, setCharts] = useState(null);
+  const [recommendStats, setRecommendStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const [dashboardRes, chartsRes] = await Promise.all([
-          axios.get(`${API}/admin/dashboard`, { headers, withCredentials: true }),
-          axios.get(`${API}/admin/dashboard/charts`, { headers, withCredentials: true })
+        const [dashboardRes, chartsRes, recRes] = await Promise.all([
+          api.get('/admin/dashboard', { headers, withCredentials: true }),
+          api.get('/admin/dashboard/charts', { headers, withCredentials: true }),
+          api.get('/admin/recommendations/stats', { headers, withCredentials: true }).catch(() => ({ data: null }))
         ]);
         setData(dashboardRes.data);
         setCharts(chartsRes.data);
+        setRecommendStats(recRes?.data || null);
       } catch (error) {
         console.error('Error fetching admin data:', error);
       } finally {
@@ -45,19 +51,19 @@ const AdminDashboard = () => {
   const summaryCards = data ? [
     { 
       label: "Today's Revenue", 
-      value: `$${data.revenue_today?.toFixed(2) || '0.00'}`, 
+      value: formatPrice(data.revenue_today ?? 0), 
       icon: DollarSign, 
       color: 'text-neon-green', 
       bgColor: 'bg-neon-green/10',
-      subtext: `Profit: $${data.profit_today?.toFixed(2) || '0.00'}`
+      subtext: `Profit: ${formatPrice(data.profit_today ?? 0)}`
     },
     { 
       label: 'Total Revenue', 
-      value: `$${data.revenue_total?.toFixed(2) || '0.00'}`, 
+      value: formatPrice(data.revenue_total ?? 0), 
       icon: TrendingUp, 
       color: 'text-electric-blue', 
       bgColor: 'bg-electric-blue/10',
-      subtext: `Profit: $${data.total_profit?.toFixed(2) || '0.00'}`
+      subtext: `Profit: ${formatPrice(data.total_profit ?? 0)}`
     },
     { 
       label: 'Pending Orders', 
@@ -85,7 +91,7 @@ const AdminDashboard = () => {
     },
     { 
       label: 'Total Profit', 
-      value: `$${data.total_profit?.toFixed(2) || '0.00'}`, 
+      value: formatPrice(data.total_profit ?? 0), 
       icon: TrendingUp, 
       color: 'text-emerald-400', 
       bgColor: 'bg-emerald-400/10',
@@ -112,7 +118,7 @@ const AdminDashboard = () => {
           <p className="text-gray-300 text-sm mb-1">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
-              {entry.name}: {typeof entry.value === 'number' && entry.name.includes('$') ? `$${entry.value.toFixed(2)}` : entry.value}
+              {entry.name}: {typeof entry.value === 'number' && entry.name.includes('$') ? formatPrice(entry.value) : entry.value}
             </p>
           ))}
         </div>
@@ -159,6 +165,38 @@ const AdminDashboard = () => {
           ))}
         </div>
 
+        {/* AI Recommender Stats */}
+        {recommendStats != null && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card className="glass p-4 border-cyber-purple/20">
+              <h3 className="font-exo font-semibold text-white mb-3 flex items-center gap-2">
+                <Sparkles size={18} className="text-cyber-purple" />
+                AI Recommendations
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Today</p>
+                  <p className="text-white font-bold">{recommendStats.requests_today ?? 0} requests</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">This week</p>
+                  <p className="text-white font-bold">{recommendStats.requests_week ?? 0} requests</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Top recommended</p>
+                  <p className="text-neon-green font-medium truncate" title={recommendStats.top_recommended?.[0]?.service_name}>
+                    {recommendStats.top_recommended?.[0]?.service_name ?? '—'} ({recommendStats.top_recommended?.[0]?.count ?? 0}×)
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Conversion rate</p>
+                  <p className="text-electric-blue font-bold">{recommendStats.conversion_rate ?? 0}% (ordered after recommendation)</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Charts Row 1: Revenue & Orders */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Revenue Line Chart */}
@@ -171,7 +209,7 @@ const AdminDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="label" stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
                     <YAxis stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <RechartsTooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line type="monotone" dataKey="revenue" name="$ Revenue" stroke="#8B5CF6" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="profit" name="$ Profit" stroke="#10B981" strokeWidth={2} dot={false} />
@@ -191,7 +229,7 @@ const AdminDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="label" stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
                     <YAxis stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <RechartsTooltip content={<CustomTooltip />} />
                     <Bar dataKey="orders" name="Orders" fill="#06B6D4" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -212,7 +250,7 @@ const AdminDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="label" stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
                     <YAxis stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <RechartsTooltip content={<CustomTooltip />} />
                     <Line type="monotone" dataKey="users" name="New Users" stroke="#8B5CF6" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -243,7 +281,7 @@ const AdminDashboard = () => {
                         <Cell key={`cell-${index}`} fill={getStatusColor(entry.status)} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <RechartsTooltip />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -266,15 +304,15 @@ const AdminDashboard = () => {
                       innerRadius={50}
                       outerRadius={80}
                       paddingAngle={2}
-                      label={({ method, amount }) => `${method}: $${amount}`}
+                      label={({ method, amount }) => `${method}: ${formatPrice(amount ?? 0)}`}
                       labelLine={false}
                     >
                       {(charts?.revenue_by_method || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                  </PieChart>
+                    <RechartsTooltip />
+                    </PieChart>
                 </ResponsiveContainer>
               </div>
             </Card>
@@ -291,7 +329,7 @@ const AdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis type="number" stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} />
                   <YAxis dataKey="name" type="category" stroke="#9CA3AF" fontSize={10} tick={{ fill: '#9CA3AF' }} width={150} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <RechartsTooltip content={<CustomTooltip />} />
                   <Bar dataKey="orders" name="Orders" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -308,11 +346,11 @@ const AdminDashboard = () => {
                 <h3 className="font-exo font-bold text-white">Recent Orders</h3>
                 <ShoppingCart className="text-cyber-purple" size={20} />
               </div>
-              {data?.recent_orders?.length === 0 ? (
+              {!(data?.recent_orders?.length) ? (
                 <div className="p-8 text-center text-gray-500">No orders yet</div>
               ) : (
                 <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
-                  {data?.recent_orders?.slice(0, 8).map((order) => (
+                  {(data.recent_orders || []).slice(0, 8).map((order) => (
                     <div key={order.order_id} className="p-4 hover:bg-white/5">
                       <div className="flex justify-between items-start">
                         <div className="flex-1 min-w-0">
@@ -323,7 +361,7 @@ const AdminDashboard = () => {
                           <Badge style={{ backgroundColor: getStatusColor(order.status) + '20', color: getStatusColor(order.status) }}>
                             {order.status}
                           </Badge>
-                          <div className="text-electric-blue font-bold mt-1">${order.charge?.toFixed(2)}</div>
+                          <div className="text-electric-blue font-bold mt-1">{formatPrice(order.charge ?? 0)}</div>
                         </div>
                       </div>
                     </div>
@@ -340,11 +378,11 @@ const AdminDashboard = () => {
                 <h3 className="font-exo font-bold text-white">Recent Deposits</h3>
                 <DollarSign className="text-neon-green" size={20} />
               </div>
-              {data?.recent_deposits?.length === 0 ? (
+              {!(data?.recent_deposits?.length) ? (
                 <div className="p-8 text-center text-gray-500">No deposits yet</div>
               ) : (
                 <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
-                  {data?.recent_deposits?.slice(0, 8).map((deposit) => (
+                  {(data.recent_deposits || []).slice(0, 8).map((deposit) => (
                     <div key={deposit.deposit_id} className="p-4 hover:bg-white/5">
                       <div className="flex justify-between items-start">
                         <div>
@@ -355,9 +393,9 @@ const AdminDashboard = () => {
                           <Badge className={deposit.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}>
                             {deposit.status}
                           </Badge>
-                          <div className="text-neon-green font-bold mt-1">+${deposit.amount?.toFixed(2)}</div>
+                          <div className="text-neon-green font-bold mt-1">+{formatPrice(deposit.amount ?? 0)}</div>
                           {deposit.bonus_amount > 0 && (
-                            <div className="text-xs text-cyber-purple">+${deposit.bonus_amount?.toFixed(2)} bonus</div>
+                            <div className="text-xs text-cyber-purple">+{formatPrice(deposit.bonus_amount)} bonus</div>
                           )}
                         </div>
                       </div>
@@ -378,7 +416,7 @@ const AdminDashboard = () => {
                 <div>
                   <h4 className="text-red-400 font-bold">Low Balance Providers</h4>
                   <p className="text-gray-400 text-sm">
-                    {data.low_balance_providers.map(p => p.name).join(', ')} - Please top up!
+                    {(Array.isArray(data?.low_balance_providers) ? data.low_balance_providers : []).map(p => p.name || p.provider_id || 'Unknown').join(', ')} - Please top up!
                   </p>
                 </div>
               </div>

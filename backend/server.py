@@ -11,7 +11,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -143,7 +143,7 @@ class TicketCreate(BaseModel):
     order_id: Optional[str] = None
 
 class Ticket(BaseModel):
-    ticket_id: str = Field(default_factory=lambda: f"tkt_{uuid.uuid4().hex[:8]}")
+    ticket_id: Union[int, str]
     user_id: str
     subject: str
     priority: str = "normal"
@@ -152,7 +152,7 @@ class Ticket(BaseModel):
 
 class TicketMessage(BaseModel):
     message_id: str = Field(default_factory=lambda: f"msg_{uuid.uuid4().hex[:8]}")
-    ticket_id: str
+    ticket_id: Union[int, str]
     user_id: str
     message: str
     is_admin: bool = False
@@ -913,8 +913,17 @@ async def get_deposits(request: Request, page: int = Query(1, ge=1), limit: int 
 @api_router.post("/tickets")
 async def create_ticket(request: Request, ticket_data: TicketCreate):
     user = await get_current_user(request)
-    
+    ticket_id = None
+    for _ in range(15):
+        candidate = random.randint(100, 9999)
+        existing = await db.tickets.find_one({"ticket_id": candidate}, {"_id": 1})
+        if not existing:
+            ticket_id = candidate
+            break
+    if ticket_id is None:
+        ticket_id = 1000 + int(datetime.now(timezone.utc).timestamp() % 100000)
     ticket = Ticket(
+        ticket_id=ticket_id,
         user_id=user["user_id"],
         subject=ticket_data.subject,
         priority=ticket_data.priority
@@ -942,29 +951,34 @@ async def get_tickets(request: Request):
     user = await get_current_user(request)
     return await db.tickets.find({"user_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
+def _ticket_id_parse(tid: str):
+    return int(tid) if tid.isdigit() else tid
+
 @api_router.get("/tickets/{ticket_id}")
 async def get_ticket(request: Request, ticket_id: str):
     user = await get_current_user(request)
-    ticket = await db.tickets.find_one({"ticket_id": ticket_id, "user_id": user["user_id"]}, {"_id": 0})
+    tid = _ticket_id_parse(ticket_id)
+    ticket = await db.tickets.find_one({"ticket_id": tid, "user_id": user["user_id"]}, {"_id": 0})
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    messages = await db.ticket_messages.find({"ticket_id": ticket_id}, {"_id": 0}).sort("created_at", 1).to_list(100)
+    messages = await db.ticket_messages.find({"ticket_id": tid}, {"_id": 0}).sort("created_at", 1).to_list(100)
     return {"ticket": ticket, "messages": messages}
 
 @api_router.post("/tickets/{ticket_id}/reply")
 async def reply_ticket(request: Request, ticket_id: str, message: str = Body(..., embed=True)):
     user = await get_current_user(request)
-    ticket = await db.tickets.find_one({"ticket_id": ticket_id, "user_id": user["user_id"]}, {"_id": 0})
+    tid = _ticket_id_parse(ticket_id)
+    ticket = await db.tickets.find_one({"ticket_id": tid, "user_id": user["user_id"]}, {"_id": 0})
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    msg = TicketMessage(ticket_id=ticket_id, user_id=user["user_id"], message=message)
+    msg = TicketMessage(ticket_id=tid, user_id=user["user_id"], message=message)
     msg_dict = msg.model_dump()
     msg_dict["created_at"] = msg_dict["created_at"].isoformat()
     await db.ticket_messages.insert_one(msg_dict)
     
-    await db.tickets.update_one({"ticket_id": ticket_id}, {"$set": {"status": "open"}})
+    await db.tickets.update_one({"ticket_id": tid}, {"$set": {"status": "open"}})
     return {"message": "Reply sent"}
 
 # ==================== PUBLIC ROUTES ====================
@@ -1562,42 +1576,126 @@ async def get_users_report(request: Request, start_date: str = None, end_date: s
 
 @api_router.get("/admin/reports/payments")
 async def get_payments_report(request: Request, start_date: str = None, end_date: str = None):
+    """Deprecated monolith route — prefer backend/main.py + routes/reports.py. Shape matches Admin UI."""
     await get_admin_user(request)
-    
+
     now = datetime.now(timezone.utc)
-    start = datetime.fromisoformat(start_date.replace("Z", "+00:00")) if start_date else (now - timedelta(days=30))
+    start = datetime.fromisoformat(start_date.replace("Z", "+00:00")) if start_date else (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
     end = datetime.fromisoformat(end_date.replace("Z", "+00:00")) if end_date else now
-    
-    deposits = await db.deposits.find({
-        "created_at": {"$gte": start.isoformat(), "$lte": end.isoformat()}
-    }, {"_id": 0}).to_list(100000)
-    
-    completed = [d for d in deposits if d.get("status") == "completed"]
-    failed = [d for d in deposits if d.get("status") in ["failed", "expired"]]
-    
-    total_amount = sum(d.get("amount", 0) for d in completed)
-    total_bonus = sum(d.get("bonus_amount", 0) for d in completed)
-    
-    # By method
+    start_s, end_s = start.isoformat(), end.isoformat()
+
+    query = {
+        "$or": [
+            {"created_at": {"$gte": start_s, "$lte": end_s}},
+            {"created_at": {"$gte": start, "$lte": end}},
+        ]
+    }
+    deposits = await db.deposits.find(query).to_list(100000)
+
+    def row_amt(d):
+        u = d.get("amount_usd")
+        if u is not None and u != "":
+            try:
+                v = float(u)
+                if v == v:
+                    return v
+            except (TypeError, ValueError):
+                pass
+        for k in ("amount_inr", "amount_php", "amount"):
+            if d.get(k) is None:
+                continue
+            try:
+                return float(d.get(k))
+            except (TypeError, ValueError):
+                continue
+        return 0.0
+
+    def bonus_amt(d):
+        for k in ("bonus_amount", "bonus"):
+            if d.get(k) is None:
+                continue
+            try:
+                return float(d.get(k))
+            except (TypeError, ValueError):
+                continue
+        return 0.0
+
+    def sort_ts(d):
+        c = d.get("created_at")
+        if isinstance(c, datetime):
+            return c.timestamp()
+        if isinstance(c, str):
+            try:
+                return datetime.fromisoformat(c.replace("Z", "+00:00")).timestamp()
+            except Exception:
+                return 0.0
+        return 0.0
+
+    deposits.sort(key=sort_ts, reverse=True)
+
+    total_amount = sum(row_amt(d) for d in deposits)
+    total_bonus = sum(bonus_amt(d) for d in deposits)
+    credited_ok = {"completed", "success"}
+    total_credited = sum(row_amt(d) + bonus_amt(d) for d in deposits if str(d.get("status") or "").lower() in credited_ok)
+
     by_method = {}
-    for d in completed:
-        method = d.get("method", "unknown")
-        if method not in by_method:
-            by_method[method] = {"amount": 0, "bonus": 0, "count": 0}
-        by_method[method]["amount"] += d.get("amount", 0)
-        by_method[method]["bonus"] += d.get("bonus_amount", 0)
-        by_method[method]["count"] += 1
-    
+    for d in deposits:
+        key = d.get("payment_type") or d.get("method") or "unknown"
+        label = str(key).replace("_", " ")
+        if key not in by_method:
+            by_method[key] = {"method": label, "amount": 0.0, "bonus": 0.0, "count": 0}
+        by_method[key]["amount"] += row_amt(d)
+        by_method[key]["bonus"] += bonus_amt(d)
+        by_method[key]["count"] += 1
+
+    limit = 1000
+    recent_raw = deposits[:limit]
+    user_ids = list({d.get("user_id") for d in recent_raw if d.get("user_id")})
+    users_by_id = {}
+    if user_ids:
+        async for u in db.users.find({"user_id": {"$in": user_ids}}, {"user_id": 1, "username": 1, "email": 1}):
+            users_by_id[u["user_id"]] = u
+
+    recent_deposits = []
+    for d in recent_raw:
+        uid = d.get("user_id")
+        u = users_by_id.get(uid) if uid else None
+        oid = d.get("_id")
+        dep_id = d.get("deposit_id") or (str(oid) if oid is not None else "")
+        pt = d.get("payment_type") or d.get("method") or "unknown"
+        c_at = d.get("created_at")
+        if isinstance(c_at, datetime):
+            c_at = c_at.isoformat()
+        recent_deposits.append({
+            "deposit_id": dep_id,
+            "user_id": uid,
+            "username": d.get("username") or (u or {}).get("username") or "",
+            "email": d.get("user_email") or d.get("email") or (u or {}).get("email"),
+            "amount": round(row_amt(d), 4),
+            "bonus_amount": round(bonus_amt(d), 4),
+            "status": d.get("status", "unknown"),
+            "method": pt,
+            "source": str(pt).replace("_", " "),
+            "created_at": c_at,
+        })
+
     return {
+        "success": True,
         "period": {"start": start.isoformat(), "end": end.isoformat()},
         "summary": {
-            "total_payments": len(deposits),
-            "successful": len(completed),
-            "failed": len(failed),
+            "total_deposits": len(deposits),
             "total_amount": round(total_amount, 2),
-            "total_bonus": round(total_bonus, 2)
+            "total_bonus": round(total_bonus, 2),
+            "total_credited": round(total_credited, 2),
+            "total_count": len(deposits),
         },
-        "by_method": [{"method": k, **v} for k, v in by_method.items()]
+        "by_method": sorted(
+            [{"method": v["method"], "amount": round(v["amount"], 2), "bonus": round(v["bonus"], 2), "count": v["count"]} for v in by_method.values()],
+            key=lambda x: x["amount"],
+            reverse=True,
+        ),
+        "by_day": [],
+        "recent_deposits": recent_deposits,
     }
 
 # ==================== ADMIN USERS ====================
@@ -1624,8 +1722,18 @@ async def get_admin_users(request: Request, page: int = 1, limit: int = 20, sear
 async def update_admin_user(request: Request, user_id: str, data: dict = Body(...)):
     await get_admin_user(request)
     
-    allowed_fields = ["balance", "is_active", "role", "name", "email", "total_spent", "total_orders"]
+    # Allow admin to update core fields plus suspension flags
+    allowed_fields = ["balance", "is_active", "is_suspended", "role", "name", "email", "total_spent", "total_orders"]
     update_data = {k: v for k, v in data.items() if k in allowed_fields}
+
+    # Normalise suspension logic: when is_suspended is toggled, also reflect in is_active
+    if "is_suspended" in update_data:
+        suspended = bool(update_data["is_suspended"])
+        update_data["is_suspended"] = suspended
+        # If admin did not explicitly send is_active, derive it from suspension flag
+        if "is_active" not in update_data:
+            update_data["is_active"] = not suspended
+
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     result = await db.users.update_one({"user_id": user_id}, {"$set": update_data})

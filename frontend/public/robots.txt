@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /*?*
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+
+Sitemap: https://socialworldpanel.com/sitemap-index.xml
+
