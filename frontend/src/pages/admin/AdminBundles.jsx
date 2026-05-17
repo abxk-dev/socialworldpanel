@@ -45,10 +45,25 @@ const AdminBundles = () => {
     try {
       const [bundlesRes, catsRes] = await Promise.all([
         api.get('/admin/bundles', { withCredentials: true }),
-        api.get('/admin/categories', { withCredentials: true }),
+        api.get('/admin/category-management/flat', { withCredentials: true }),
       ]);
       const b = bundlesRes.data?.bundles || [];
-      const c = Array.isArray(catsRes.data) ? catsRes.data : (catsRes.data?.categories ?? []);
+      const rawCats =
+        (Array.isArray(catsRes?.data) ? catsRes.data : catsRes?.data?.categories) || [];
+      const normalizeId = (v) => {
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'string') return v;
+        if (typeof v === 'number') return String(v);
+        const s = typeof v?.toString === 'function' ? v.toString() : String(v);
+        const m = s.match(/^ObjectId\(\"?([0-9a-fA-F]{24})\"?\)$/);
+        return m ? m[1] : s;
+      };
+      const c = rawCats
+        .map((cat) => ({
+          ...cat,
+          _id: normalizeId(cat?._id ?? cat?.id ?? cat?.category_id ?? cat?.categoryId),
+        }))
+        .filter((cat) => cat?._id);
       setBundles(b);
       setCategories(c);
     } catch (e) {
@@ -458,4 +473,3 @@ const AdminBundles = () => {
 };
 
 export default AdminBundles;
-
